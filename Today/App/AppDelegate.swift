@@ -12,5 +12,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         if hotKey == nil {
             NSLog("Failed to register global hotkey — is another app holding \u{2325}Space?")
         }
+        // Dev aid: `TODAY_SHOW_CAPTURE=1 open Today.app` pops the panel without the hotkey.
+        if ProcessInfo.processInfo.environment["TODAY_SHOW_CAPTURE"] != nil {
+            capture.show()
+        }
     }
 }
