@@ -5,6 +5,8 @@ app and a floating panel appears: a text field, a row of tabs for your
 "spaces", and the list of what's left today. You drive all of it from the
 keyboard.
 
+![The Today panel open over the desktop](docs/screenshot.png)
+
 Requires macOS 26, because the panel uses Liquid Glass.
 
 ## Setup
