@@ -266,27 +266,39 @@ struct PanelView: View {
     // MARK: - List
 
     private var list: some View {
-        ScrollView {
-            LazyVStack(alignment: .leading, spacing: 1) {
-                ForEach(rows) { row in
-                    switch row {
-                    case .header(_, let title):
-                        sectionHeader(title)
-                    case .task(let task):
-                        TaskRow(
-                            title: task.title,
-                            isDone: task.isDone,
-                            isSelected: task.id == selectedID && focus == .list
-                        ) {
-                            selectedID = task.id
-                            focus = .list
-                            toggle(task)
+        ScrollViewReader { proxy in
+            ScrollView {
+                LazyVStack(alignment: .leading, spacing: 1) {
+                    ForEach(rows) { row in
+                        switch row {
+                        case .header(_, let title):
+                            sectionHeader(title)
+                        case .task(let task):
+                            TaskRow(
+                                title: task.title,
+                                isDone: task.isDone,
+                                isSelected: task.id == selectedID && focus == .list
+                            ) {
+                                selectedID = task.id
+                                focus = .list
+                                toggle(task)
+                            }
                         }
                     }
                 }
+                .padding(.horizontal, 10)
+                .padding(.bottom, 8)
             }
-            .padding(.horizontal, 10)
-            .padding(.bottom, 8)
+            .onChange(of: selectedID) { _, id in
+                // No anchor = scroll only as far as needed to reveal the row.
+                guard let id, focus == .list else { return }
+                withAnimation(.snappy(duration: 0.2)) { proxy.scrollTo(id.uuidString) }
+            }
+            .onChange(of: focus) { _, focus in
+                if focus == .field, let first = rows.first {
+                    withAnimation(.snappy(duration: 0.2)) { proxy.scrollTo(first.id, anchor: .top) }
+                }
+            }
         }
         .scrollIndicators(.hidden)
         .frame(maxHeight: maxListHeight)
