@@ -69,6 +69,12 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         )
         .modelContainer(Store.container)
         let hosting = NSHostingView(rootView: view)
+        // The glass backdrop is a layer that fills the hosting view, not the
+        // SwiftUI shape — mask the layer itself so the corners stay rounded.
+        hosting.wantsLayer = true
+        hosting.layer?.cornerRadius = PanelView.cornerRadius
+        hosting.layer?.cornerCurve = .continuous
+        hosting.layer?.masksToBounds = true
         panel.contentView = hosting
         resize(to: hosting.fittingSize)
 

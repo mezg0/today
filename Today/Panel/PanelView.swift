@@ -4,6 +4,7 @@ import SwiftData
 // The whole app in one floating panel: capture field, space tabs, today list.
 struct PanelView: View {
     static let width: CGFloat = 560
+    static let cornerRadius: CGFloat = 16
 
     var maxListHeight: CGFloat
     var onDismiss: () -> Void
@@ -129,7 +130,8 @@ struct PanelView: View {
             }
         }
         .frame(width: Self.width)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
         .onAppear {
             // Focus lands reliably only after the panel becomes key.
