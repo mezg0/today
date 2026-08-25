@@ -127,8 +127,6 @@ struct PanelView: View {
             } else {
                 list
             }
-            hairline
-            footer
         }
         .frame(width: Self.width)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -183,9 +181,6 @@ struct PanelView: View {
                         text = ""
                     }
                 }
-            keycap("\u{21A9}", "add")
-                .opacity(text.isEmpty ? 0 : 1)
-                .animation(motion(.easeOut(duration: 0.15)), value: text.isEmpty)
         }
         .padding(.horizontal, 18)
         .frame(height: 60)
@@ -197,14 +192,13 @@ struct PanelView: View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 2) {
                 // Pills carry the ⌘-digit shortcuts, so they fire whatever has focus.
-                SpacePill(label: "All", key: "1", isSelected: selectedSpace == nil) {
+                SpacePill(label: "All", isSelected: selectedSpace == nil) {
                     selectSpace(at: nil)
                 }
                 .keyboardShortcut("1", modifiers: .command)
                 ForEach(Array(spaces.enumerated()), id: \.element.id) { index, space in
                     let pill = SpacePill(
                         label: space.name,
-                        key: index < 8 ? "\(index + 2)" : nil,
                         isSelected: selectedSpace?.id == space.id
                     ) {
                         selectSpace(at: index)
@@ -231,7 +225,7 @@ struct PanelView: View {
                         .onSubmit(commitSpaceEdit)
                         .onExitCommand(perform: cancelSpaceEdit)
                 } else {
-                    SpacePill(label: "+", key: nil, isSelected: false) { beginEditing(nil) }
+                    SpacePill(label: "+", isSelected: false) { beginEditing(nil) }
                         .help("New space")
                 }
             }
@@ -410,59 +404,11 @@ struct PanelView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 4) {
-            if tasks.isEmpty {
-                Text("Nothing here yet")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Text("Type above and press \u{21A9} to add your first task")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.tertiary)
-            } else if let selectedSpace {
-                Text("Nothing in \(selectedSpace.name)")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-                Text("Tasks you add now land here")
-                    .font(.system(size: 12))
-                    .foregroundStyle(.tertiary)
-            } else {
-                Text("All clear")
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(.secondary)
-            }
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 26)
-    }
-
-    // MARK: - Footer
-
-    private var footer: some View {
-        HStack(spacing: 16) {
-            keycap("\u{2193}", "list")
-            keycap("space", "done")
-            keycap("\u{21A9}", "edit")
-            keycap("\u{232B}", "delete")
-            keycap("\u{2318}1\u{2013}9", "tabs")
-            Spacer()
-            keycap("esc", "close")
-        }
-        .padding(.horizontal, 18)
-        .padding(.vertical, 7)
-    }
-
-    private func keycap(_ key: String, _ label: String) -> some View {
-        HStack(spacing: 5) {
-            Text(key)
-                .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 5)
-                .frame(height: 17)
-                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
-            Text(label)
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
-        }
+        Text(selectedSpace.map { "Nothing in \($0.name)" } ?? "All clear")
+            .font(.system(size: 13))
+            .foregroundStyle(.secondary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 22)
     }
 
     // MARK: - Keyboard
@@ -597,7 +543,6 @@ private extension Unicode.GeneralCategory {
 
 private struct SpacePill: View {
     let label: String
-    let key: String?
     let isSelected: Bool
     var action: () -> Void
 
@@ -606,17 +551,10 @@ private struct SpacePill: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 5) {
-                if let key {
-                    Text(key)
-                        .font(.system(size: 9.5, weight: .semibold, design: .rounded))
-                        .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
-                }
-                Text(label)
-                    .font(.system(size: 12, weight: .medium))
-                    .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-            }
-            .padding(.horizontal, 9)
+            Text(label)
+                .font(.system(size: 12, weight: .medium))
+                .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
+            .padding(.horizontal, 10)
             .padding(.vertical, 4)
             .background(fill, in: Capsule())
             .contentShape(Capsule())
