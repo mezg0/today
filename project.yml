@@ -1,0 +1,31 @@
+name: Today
+options:
+  bundleIdPrefix: com.brandongomes
+  deploymentTarget:
+    macOS: "15.0"
+  createIntermediateGroups: true
+targets:
+  Today:
+    type: application
+    platform: macOS
+    sources:
+      - Today
+    entitlements:
+      path: Today/Today.entitlements
+      properties:
+        com.apple.developer.icloud-services: [CloudKit]
+        com.apple.developer.icloud-container-identifiers: [iCloud.com.brandongomes.today]
+        com.apple.security.network.client: true
+    info:
+      path: Today/Info.plist
+      properties:
+        LSUIElement: true
+        CFBundleDisplayName: Today
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: com.brandongomes.today
+        MARKETING_VERSION: "0.1.0"
+        CURRENT_PROJECT_VERSION: "1"
+        SWIFT_VERSION: "6.0"
+        CODE_SIGN_STYLE: Automatic
+        ENABLE_HARDENED_RUNTIME: YES
