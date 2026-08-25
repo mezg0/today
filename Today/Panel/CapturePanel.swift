@@ -71,7 +71,18 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         let hosting = NSHostingView(rootView: view)
         panel.contentView = hosting
         resize(to: hosting.fittingSize)
+
+        // A hair of fade reads as "instant" but hides the first-frame pop.
+        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
+        panel.alphaValue = reduceMotion ? 1 : 0
         panel.makeKeyAndOrderFront(nil)
+        if !reduceMotion {
+            NSAnimationContext.runAnimationGroup { ctx in
+                ctx.duration = 0.08
+                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
+                panel.animator().alphaValue = 1
+            }
+        }
     }
 
     func dismiss() {
@@ -87,6 +98,8 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
             height: size.height
         )
         panel.setFrame(frame, display: true)
+        // The window shadow is cached from the opaque region; refresh it or it lags the new size.
+        panel.invalidateShadow()
     }
 
     func windowDidResignKey(_ notification: Notification) {

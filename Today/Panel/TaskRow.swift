@@ -3,8 +3,12 @@ import SwiftUI
 struct TaskRow: View {
     let title: String
     let isDone: Bool
+    let isSettled: Bool
     let isSelected: Bool
     var onToggle: () -> Void
+
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isHovered = false
 
     var body: some View {
         HStack(spacing: 10) {
@@ -16,28 +20,37 @@ struct TaskRow: View {
                 .lineLimit(2)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 8)
+        .padding(.horizontal, 10)
         .padding(.vertical, 7)
         .background(
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(isSelected ? AnyShapeStyle(.selection.opacity(0.8)) : AnyShapeStyle(.clear))
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(rowFill)
         )
+        .opacity(isSettled ? 0.55 : 1)
         .contentShape(Rectangle())
-        .onTapGesture { onToggle() }
+        .onHover { isHovered = $0 }
+        .onTapGesture(perform: onToggle)
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
+    }
+
+    private var rowFill: AnyShapeStyle {
+        if isSelected { return AnyShapeStyle(.selection.opacity(0.85)) }
+        if isHovered { return AnyShapeStyle(.primary.opacity(0.05)) }
+        return AnyShapeStyle(.clear)
     }
 
     private var checkmark: some View {
         ZStack {
             Circle()
-                .strokeBorder(.tertiary, lineWidth: 1.5)
+                .strokeBorder(.secondary.opacity(0.55), lineWidth: 1.5)
                 .opacity(isDone ? 0 : 1)
             Image(systemName: "checkmark.circle.fill")
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 17, weight: .semibold))
                 .foregroundStyle(.tint)
-                .scaleEffect(isDone ? 1 : 0.4)
+                .scaleEffect(isDone ? 1 : 0.5)
                 .opacity(isDone ? 1 : 0)
         }
-        .frame(width: 17, height: 17)
-        .animation(.spring(response: 0.3, dampingFraction: 0.5), value: isDone)
+        .frame(width: 18, height: 18)
+        .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.62), value: isDone)
     }
 }

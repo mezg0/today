@@ -20,7 +20,7 @@ panel; the menubar icon just has Open and Quit.
 | Anywhere | **⌥Space** opens/closes the panel. |
 | Field | Type + **Enter** adds to the current tab (All = no space). **Esc** clears, then closes. |
 | Tabs | **⌘1** All · **⌘2–9** spaces · **⇥ / ⇧⇥** cycle · **+** creates; right-click to rename/delete. |
-| List | **↓** from the field enters it · **j/k** or arrows move · **Space** completes · **⌫** deletes · **↑** past the top, or any letter, returns to the field. |
+| List | **↓** from the field enters it · **j/k** or arrows move · **Space** completes · **↩** edits inline · **⌫** deletes · **↑** past the top, or any letter, returns to the field. Right-click a row for Edit / Delete. |
 
 ## Notes
 

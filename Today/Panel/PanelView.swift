@@ -10,6 +10,7 @@ struct PanelView: View {
     var onSizeChange: (CGSize) -> Void
 
     @Environment(\.modelContext) private var context
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
     @Query(sort: \Space.sortOrder) private var spaces: [Space]
     @AppStorage("selectedSpaceID") private var selectedSpaceID = ""
@@ -24,8 +25,23 @@ struct PanelView: View {
     @State private var editingSpace: Space?
     @State private var spaceName = ""
 
-    private enum Focus { case field, list, spaceEditor }
+    @State private var editingTaskID: UUID?
+    @State private var editText = ""
+
+    // Measured from the list's content so the panel is sized by what's in it,
+    // not by whatever height the window happens to have right now.
+    @State private var listContentHeight: CGFloat = 0
+
+    private enum Focus { case field, list, spaceEditor, taskEditor }
     @FocusState private var focus: Focus?
+
+    // MARK: - Motion
+
+    private func motion(_ animation: Animation) -> Animation? {
+        reduceMotion ? nil : animation
+    }
+
+    private var quick: Animation? { motion(.snappy(duration: 0.2)) }
 
     // MARK: - Derived data
 
@@ -104,19 +120,21 @@ struct PanelView: View {
     var body: some View {
         VStack(spacing: 0) {
             field
+            hairline
             tabs
             if visible.isEmpty {
                 emptyState
             } else {
                 list
             }
+            hairline
             footer
         }
         .frame(width: Self.width)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .strokeBorder(.primary.opacity(0.1))
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(.primary.opacity(0.09))
         )
         .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
         .onAppear {
@@ -125,14 +143,23 @@ struct PanelView: View {
         }
     }
 
+    private var hairline: some View {
+        Rectangle()
+            .fill(.primary.opacity(0.07))
+            .frame(height: 1)
+    }
+
+    // MARK: - Field
+
     private var field: some View {
         HStack(spacing: 12) {
-            Image(systemName: "plus.circle.fill")
-                .font(.system(size: 22, weight: .medium))
+            Image(systemName: "plus")
+                .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(.secondary)
+                .frame(width: 22, height: 22)
             TextField(selectedSpace.map { "Add to \($0.name)" } ?? "What needs doing?", text: $text)
                 .textFieldStyle(.plain)
-                .font(.system(size: 22))
+                .font(.system(size: 20))
                 .focused($focus, equals: .field)
                 .onSubmit(addTask)
                 .onKeyPress(.downArrow) {
@@ -150,16 +177,19 @@ struct PanelView: View {
                         text = ""
                     }
                 }
+            keycap("\u{21A9}", "add")
+                .opacity(text.isEmpty ? 0 : 1)
+                .animation(motion(.easeOut(duration: 0.15)), value: text.isEmpty)
         }
-        .padding(.horizontal, 20)
-        .frame(height: 64)
+        .padding(.horizontal, 18)
+        .frame(height: 60)
     }
 
     // MARK: - Tabs
 
     private var tabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 4) {
+            HStack(spacing: 2) {
                 // Pills carry the ⌘-digit shortcuts, so they fire whatever has focus.
                 SpacePill(label: "All", key: "1", isSelected: selectedSpace == nil) {
                     selectSpace(at: nil)
@@ -184,13 +214,13 @@ struct PanelView: View {
                     }
                 }
                 if isEditingSpace {
-                    TextField("Space name", text: $spaceName)
+                    TextField("Name", text: $spaceName)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 11, weight: .medium))
-                        .frame(width: 100)
-                        .padding(.horizontal, 8)
-                        .padding(.vertical, 3)
-                        .background(.quaternary.opacity(0.5), in: Capsule())
+                        .font(.system(size: 12, weight: .medium))
+                        .frame(width: 96)
+                        .padding(.horizontal, 9)
+                        .padding(.vertical, 4)
+                        .background(.primary.opacity(0.06), in: Capsule())
                         .focused($focus, equals: .spaceEditor)
                         .onSubmit(commitSpaceEdit)
                         .onExitCommand(perform: cancelSpaceEdit)
@@ -199,15 +229,15 @@ struct PanelView: View {
                         .help("New space")
                 }
             }
-            .padding(.horizontal, 16)
-            .padding(.bottom, 10)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 8)
         }
     }
 
     private func beginEditing(_ space: Space?) {
         editingSpace = space
         spaceName = space?.name ?? ""
-        isEditingSpace = true
+        withAnimation(quick) { isEditingSpace = true }
         DispatchQueue.main.async { focus = .spaceEditor }
     }
 
@@ -215,7 +245,7 @@ struct PanelView: View {
         let name = spaceName.trimmingCharacters(in: .whitespacesAndNewlines)
         defer { cancelSpaceEdit() }
         guard !name.isEmpty else { return }
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(quick) {
             if let editingSpace {
                 editingSpace.name = name
             } else {
@@ -228,7 +258,7 @@ struct PanelView: View {
     }
 
     private func cancelSpaceEdit() {
-        isEditingSpace = false
+        withAnimation(quick) { isEditingSpace = false }
         editingSpace = nil
         spaceName = ""
         focus = .field
@@ -236,14 +266,14 @@ struct PanelView: View {
 
     private func delete(_ space: Space) {
         if selectedSpace?.id == space.id { selectedSpaceID = "" }
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(quick) {
             context.delete(space)
         }
         try? context.save()
     }
 
     private func selectSpace(at index: Int?) {
-        withAnimation(.snappy(duration: 0.2)) {
+        withAnimation(quick) {
             if let index, spaces.indices.contains(index) {
                 selectedSpaceID = spaces[index].id.uuidString
             } else {
@@ -268,40 +298,53 @@ struct PanelView: View {
     private var list: some View {
         ScrollViewReader { proxy in
             ScrollView {
-                LazyVStack(alignment: .leading, spacing: 1) {
+                VStack(alignment: .leading, spacing: 1) {
                     ForEach(rows) { row in
                         switch row {
                         case .header(_, let title):
                             sectionHeader(title)
                         case .task(let task):
-                            TaskRow(
-                                title: task.title,
-                                isDone: task.isDone,
-                                isSelected: task.id == selectedID && focus == .list
-                            ) {
-                                selectedID = task.id
-                                focus = .list
-                                toggle(task)
+                            if editingTaskID == task.id {
+                                taskEditor
+                            } else {
+                                TaskRow(
+                                    title: task.title,
+                                    isDone: task.isDone,
+                                    isSettled: task.isDone && !settling.contains(task.id),
+                                    isSelected: task.id == selectedID && focus == .list
+                                ) {
+                                    selectedID = task.id
+                                    focus = .list
+                                    toggle(task)
+                                }
+                                .contextMenu {
+                                    Button("Edit") { beginEditing(task) }
+                                    Button("Delete", role: .destructive) { delete(task) }
+                                }
+                                .transition(.opacity)
                             }
                         }
                     }
                 }
-                .padding(.horizontal, 10)
+                .padding(.horizontal, 8)
+                .padding(.top, 4)
                 .padding(.bottom, 8)
+                .animation(quick, value: rows.map(\.id))
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listContentHeight = $0 }
             }
             .onChange(of: selectedID) { _, id in
                 // No anchor = scroll only as far as needed to reveal the row.
                 guard let id, focus == .list else { return }
-                withAnimation(.snappy(duration: 0.2)) { proxy.scrollTo(id.uuidString) }
+                withAnimation(quick) { proxy.scrollTo(id.uuidString) }
             }
             .onChange(of: focus) { _, focus in
                 if focus == .field, let first = rows.first {
-                    withAnimation(.snappy(duration: 0.2)) { proxy.scrollTo(first.id, anchor: .top) }
+                    withAnimation(quick) { proxy.scrollTo(first.id, anchor: .top) }
                 }
             }
         }
         .scrollIndicators(.hidden)
-        .frame(maxHeight: maxListHeight)
+        .frame(height: min(listContentHeight, maxListHeight))
         .focusable()
         .focusEffectDisabled()
         .focused($focus, equals: .list)
@@ -309,45 +352,109 @@ struct PanelView: View {
         .onExitCommand(perform: onDismiss)
     }
 
+    private var taskEditor: some View {
+        HStack(spacing: 10) {
+            Circle()
+                .strokeBorder(.secondary.opacity(0.55), lineWidth: 1.5)
+                .frame(width: 18, height: 18)
+            TextField("", text: $editText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 13))
+                .focused($focus, equals: .taskEditor)
+                .onSubmit(commitTaskEdit)
+                .onExitCommand(perform: cancelTaskEdit)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 7)
+        .background(
+            RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(.selection.opacity(0.85))
+        )
+    }
+
+    private func beginEditing(_ task: Task) {
+        selectedID = task.id
+        editText = task.title
+        editingTaskID = task.id
+        DispatchQueue.main.async { focus = .taskEditor }
+    }
+
+    private func commitTaskEdit() {
+        defer { cancelTaskEdit() }
+        let title = editText.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !title.isEmpty, let task = visible.first(where: { $0.id == editingTaskID }) else { return }
+        task.title = title
+        try? context.save()
+    }
+
+    private func cancelTaskEdit() {
+        editingTaskID = nil
+        editText = ""
+        focus = .list
+    }
+
     private func sectionHeader(_ title: String) -> some View {
         Text(title)
-            .font(.system(size: 11, weight: .medium))
-            .foregroundStyle(.tertiary)
-            .padding(.horizontal, 8)
-            .padding(.top, 8)
-            .padding(.bottom, 2)
+            .font(.system(size: 11, weight: .semibold))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.top, 10)
+            .padding(.bottom, 3)
     }
 
     private var emptyState: some View {
-        Text("All clear")
-            .font(.system(size: 13))
-            .foregroundStyle(.tertiary)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, 22)
+        VStack(spacing: 4) {
+            if tasks.isEmpty {
+                Text("Nothing here yet")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Text("Type above and press \u{21A9} to add your first task")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+            } else if let selectedSpace {
+                Text("Nothing in \(selectedSpace.name)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+                Text("Tasks you add now land here")
+                    .font(.system(size: 12))
+                    .foregroundStyle(.tertiary)
+            } else {
+                Text("All clear")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .frame(maxWidth: .infinity)
+        .padding(.vertical, 26)
     }
+
+    // MARK: - Footer
 
     private var footer: some View {
-        HStack(spacing: 14) {
-            hint("\u{2193}", "list")
-            hint("\u{2318}1\u{2013}9", "tabs")
-            hint("space", "done")
-            hint("\u{232B}", "delete")
+        HStack(spacing: 16) {
+            keycap("\u{2193}", "list")
+            keycap("space", "done")
+            keycap("\u{21A9}", "edit")
+            keycap("\u{232B}", "delete")
+            keycap("\u{2318}1\u{2013}9", "tabs")
             Spacer()
-            hint("esc", "close")
+            keycap("esc", "close")
         }
-        .padding(.horizontal, 20)
-        .padding(.vertical, 8)
-        .background(.quaternary.opacity(0.25))
+        .padding(.horizontal, 18)
+        .padding(.vertical, 7)
     }
 
-    private func hint(_ key: String, _ label: String) -> some View {
-        HStack(spacing: 4) {
+    private func keycap(_ key: String, _ label: String) -> some View {
+        HStack(spacing: 5) {
             Text(key)
                 .font(.system(size: 10, weight: .semibold, design: .rounded))
-                .foregroundStyle(.tertiary)
+                .foregroundStyle(.secondary)
+                .padding(.horizontal, 5)
+                .frame(height: 17)
+                .background(.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 4, style: .continuous))
             Text(label)
-                .font(.system(size: 10))
-                .foregroundStyle(.quaternary)
+                .font(.system(size: 11))
+                .foregroundStyle(.secondary)
         }
     }
 
@@ -381,7 +488,7 @@ struct PanelView: View {
             cycleSpace(by: press.modifiers.contains(.shift) ? -1 : 1)
             return .handled
         case .return:
-            focus = .field
+            if let task = selectedTask { beginEditing(task) }
             return .handled
         default:
             break
@@ -422,7 +529,7 @@ struct PanelView: View {
     private func addTask() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+        withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.85))) {
             context.insert(Task(title: trimmed, space: selectedSpace))
             text = ""
         }
@@ -431,7 +538,7 @@ struct PanelView: View {
 
     private func toggle(_ task: Task) {
         if task.isDone {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.7)) {
+            withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.8))) {
                 task.completedAt = nil
             }
         } else {
@@ -442,15 +549,15 @@ struct PanelView: View {
 
     private func complete(_ task: Task) {
         let id = task.id
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.55)) {
+        withAnimation(motion(.spring(response: 0.28, dampingFraction: 0.62))) {
             task.completedAt = .now
             _ = settling.insert(id)
         }
         Sounds.complete()
         // `_Concurrency.` because our model shadows Swift's Task type.
         _Concurrency.Task { @MainActor in
-            try? await _Concurrency.Task.sleep(for: .seconds(0.7))
-            withAnimation(.spring(response: 0.5, dampingFraction: 0.8)) {
+            try? await _Concurrency.Task.sleep(for: .seconds(0.65))
+            withAnimation(motion(.spring(response: 0.45, dampingFraction: 0.85))) {
                 _ = settling.remove(id)
             }
         }
@@ -458,7 +565,7 @@ struct PanelView: View {
 
     private func delete(_ task: Task) {
         moveSelection(by: task.id == visible.last?.id ? -1 : 1)
-        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+        withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.85))) {
             context.delete(task)
         }
         try? context.save()
@@ -471,27 +578,35 @@ private struct SpacePill: View {
     let isSelected: Bool
     var action: () -> Void
 
+    @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var isHovered = false
+
     var body: some View {
         Button(action: action) {
-            HStack(spacing: 4) {
+            HStack(spacing: 5) {
                 if let key {
                     Text(key)
-                        .font(.system(size: 9, weight: .semibold, design: .rounded))
-                        .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.quaternary))
+                        .font(.system(size: 9.5, weight: .semibold, design: .rounded))
+                        .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.tertiary))
                 }
                 Text(label)
-                    .font(.system(size: 11, weight: .medium))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
             }
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(
-                isSelected ? AnyShapeStyle(.tint.opacity(0.15)) : AnyShapeStyle(.quaternary.opacity(0.4)),
-                in: Capsule()
-            )
+            .padding(.horizontal, 9)
+            .padding(.vertical, 4)
+            .background(fill, in: Capsule())
             .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .onHover { isHovered = $0 }
+        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
+    }
+
+    private var fill: AnyShapeStyle {
+        if isSelected { return AnyShapeStyle(.tint.opacity(0.16)) }
+        if isHovered { return AnyShapeStyle(.primary.opacity(0.06)) }
+        return AnyShapeStyle(.clear)
     }
 }
