@@ -53,21 +53,23 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
     }
 
     func show() {
+        let mouse = NSEvent.mouseLocation
+        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
+        let frame = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
+        topY = frame.minY + frame.height * 0.88
+        centerX = frame.midX
+        // Field + tabs + footer are ~150pt; leave a margin above the Dock.
+        let maxListHeight = topY - frame.minY - 150 - 24
+
         // Fresh SwiftUI root each time: resets the field and re-fires focus.
         let view = PanelView(
+            maxListHeight: maxListHeight,
             onDismiss: { [weak self] in self?.dismiss() },
             onSizeChange: { [weak self] size in self?.resize(to: size) }
         )
         .modelContainer(Store.container)
         let hosting = NSHostingView(rootView: view)
         panel.contentView = hosting
-
-        let mouse = NSEvent.mouseLocation
-        let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
-        if let frame = screen?.visibleFrame {
-            topY = frame.minY + frame.height * 0.8
-            centerX = frame.midX
-        }
         resize(to: hosting.fittingSize)
         panel.makeKeyAndOrderFront(nil)
     }

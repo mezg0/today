@@ -5,6 +5,7 @@ import SwiftData
 struct PanelView: View {
     static let width: CGFloat = 560
 
+    var maxListHeight: CGFloat
     var onDismiss: () -> Void
     var onSizeChange: (CGSize) -> Void
 
@@ -287,7 +288,8 @@ struct PanelView: View {
             .padding(.horizontal, 10)
             .padding(.bottom, 8)
         }
-        .frame(maxHeight: 440)
+        .scrollIndicators(.hidden)
+        .frame(maxHeight: maxListHeight)
         .focusable()
         .focusEffectDisabled()
         .focused($focus, equals: .list)
