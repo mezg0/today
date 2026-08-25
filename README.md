@@ -19,7 +19,7 @@ The app lives in the menubar (no Dock icon). Quit from the popover footer.
 | Anywhere | **⌥Space** — capture panel. Enter saves, Esc cancels. |
 | Capture panel | **⌘1–9** route the task to a space, **⌘0** back to no space. |
 | Menubar popover | **j/k** or arrows move · **Space** completes · **⌫** deletes |
-| Menubar popover | **1–9** switch space · **0** or **`** show All · **⇥ / ⇧⇥** cycle |
+| Menubar popover | **1** All · **2–9** spaces · **⇥ / ⇧⇥** cycle |
 | Space pills | **+** creates a space; right-click a pill to rename/delete. |
 
 ## Notes

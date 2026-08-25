@@ -128,13 +128,13 @@ struct TodayListView: View {
     private var spaceBar: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 4) {
-                SpacePill(label: "All", key: "0", isSelected: selectedSpace == nil) {
+                SpacePill(label: "All", key: "1", isSelected: selectedSpace == nil) {
                     selectedSpaceID = ""
                 }
                 ForEach(Array(spaces.enumerated()), id: \.element.id) { index, space in
                     SpacePill(
                         label: space.name,
-                        key: index < 9 ? "\(index + 1)" : nil,
+                        key: index < 8 ? "\(index + 2)" : nil,
                         isSelected: selectedSpace?.id == space.id
                     ) {
                         selectedSpaceID = space.id.uuidString
@@ -274,7 +274,7 @@ struct TodayListView: View {
 
     private var footer: some View {
         HStack {
-            Text("\u{2325}Space capture \u{00B7} 1\u{2013}9 spaces \u{00B7} \u{21E5} cycle")
+            Text("\u{2325}Space capture \u{00B7} 1\u{2013}9 tabs \u{00B7} \u{21E5} cycle")
                 .font(.system(size: 10))
                 .foregroundStyle(.tertiary)
             Spacer()
@@ -315,10 +315,11 @@ struct TodayListView: View {
             moveSelection(by: 1)
         case "k":
             moveSelection(by: -1)
-        case "0", "`":
+        case "1":
             selectSpace(at: nil)
-        case "1", "2", "3", "4", "5", "6", "7", "8", "9":
-            selectSpace(at: Int(press.characters)! - 1)
+        case "2", "3", "4", "5", "6", "7", "8", "9":
+            // Tab 1 is All, so space n lives on key n+1.
+            selectSpace(at: Int(press.characters)! - 2)
         default:
             return .ignored
         }
