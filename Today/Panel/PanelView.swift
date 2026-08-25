@@ -425,7 +425,8 @@ struct PanelView: View {
 
     private func enterList() {
         guard !visible.isEmpty else { return }
-        if selectedTask == nil { selectedID = visible.first?.id }
+        // Coming from the field always starts at the top, not wherever the highlight was left.
+        selectedID = visible.first?.id
         focus = .list
     }
 
