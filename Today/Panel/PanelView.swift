@@ -1,12 +1,19 @@
 import SwiftUI
 import SwiftData
 
-struct TodayListView: View {
+// The whole app in one floating panel: capture field, space tabs, today list.
+struct PanelView: View {
+    static let width: CGFloat = 560
+
+    var onDismiss: () -> Void
+    var onSizeChange: (CGSize) -> Void
+
     @Environment(\.modelContext) private var context
     @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
     @Query(sort: \Space.sortOrder) private var spaces: [Space]
     @AppStorage("selectedSpaceID") private var selectedSpaceID = ""
 
+    @State private var text = ""
     @State private var selectedID: UUID?
     // Tasks that were just completed: they keep their spot in the list for a
     // beat so the checkmark can land before the row settles down to Done.
@@ -16,8 +23,10 @@ struct TodayListView: View {
     @State private var editingSpace: Space?
     @State private var spaceName = ""
 
-    private enum Focus { case list, spaceEditor }
+    private enum Focus { case field, list, spaceEditor }
     @FocusState private var focus: Focus?
+
+    // MARK: - Derived data
 
     private var selectedSpace: Space? {
         spaces.first { $0.id.uuidString == selectedSpaceID }
@@ -89,10 +98,12 @@ struct TodayListView: View {
         return rows
     }
 
+    // MARK: - Body
+
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            header
-            spaceBar
+        VStack(spacing: 0) {
+            field
+            tabs
             if visible.isEmpty {
                 emptyState
             } else {
@@ -100,55 +111,82 @@ struct TodayListView: View {
             }
             footer
         }
-        .frame(width: 340)
-        .focusable()
-        .focusEffectDisabled()
-        .focused($focus, equals: .list)
-        .onKeyPress(action: handleKey)
-        .onAppear { focus = .list }
-    }
-
-    // MARK: - Header & spaces
-
-    private var header: some View {
-        VStack(alignment: .leading, spacing: 2) {
-            Text(selectedSpace?.name ?? "All")
-                .font(.system(size: 15, weight: .semibold))
-                .contentTransition(.numericText())
-            Text(Date.now.formatted(.dateTime.weekday(.wide).month().day()))
-                .font(.system(size: 11))
-                .foregroundStyle(.secondary)
+        .frame(width: Self.width)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .strokeBorder(.primary.opacity(0.1))
+        )
+        .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
+        .onAppear {
+            // Focus lands reliably only after the panel becomes key.
+            DispatchQueue.main.async { focus = .field }
         }
-        .padding(.horizontal, 14)
-        .padding(.top, 12)
-        .padding(.bottom, 6)
-        .animation(.snappy(duration: 0.2), value: selectedSpaceID)
     }
 
-    private var spaceBar: some View {
+    private var field: some View {
+        HStack(spacing: 12) {
+            Image(systemName: "plus.circle.fill")
+                .font(.system(size: 22, weight: .medium))
+                .foregroundStyle(.secondary)
+            TextField(selectedSpace.map { "Add to \($0.name)" } ?? "What needs doing?", text: $text)
+                .textFieldStyle(.plain)
+                .font(.system(size: 22))
+                .focused($focus, equals: .field)
+                .onSubmit(addTask)
+                .onKeyPress(.downArrow) {
+                    enterList()
+                    return .handled
+                }
+                .onKeyPress(keys: [.tab]) { press in
+                    cycleSpace(by: press.modifiers.contains(.shift) ? -1 : 1)
+                    return .handled
+                }
+                .onExitCommand {
+                    if text.isEmpty {
+                        onDismiss()
+                    } else {
+                        text = ""
+                    }
+                }
+        }
+        .padding(.horizontal, 20)
+        .frame(height: 64)
+    }
+
+    // MARK: - Tabs
+
+    private var tabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 4) {
+                // Pills carry the ⌘-digit shortcuts, so they fire whatever has focus.
                 SpacePill(label: "All", key: "1", isSelected: selectedSpace == nil) {
-                    selectedSpaceID = ""
+                    selectSpace(at: nil)
                 }
+                .keyboardShortcut("1", modifiers: .command)
                 ForEach(Array(spaces.enumerated()), id: \.element.id) { index, space in
-                    SpacePill(
+                    let pill = SpacePill(
                         label: space.name,
                         key: index < 8 ? "\(index + 2)" : nil,
                         isSelected: selectedSpace?.id == space.id
                     ) {
-                        selectedSpaceID = space.id.uuidString
+                        selectSpace(at: index)
                     }
                     .contextMenu {
                         Button("Rename") { beginEditing(space) }
                         Button("Delete Space", role: .destructive) { delete(space) }
+                    }
+                    if index < 8 {
+                        pill.keyboardShortcut(KeyEquivalent(Character(String(index + 2))), modifiers: .command)
+                    } else {
+                        pill
                     }
                 }
                 if isEditingSpace {
                     TextField("Space name", text: $spaceName)
                         .textFieldStyle(.plain)
                         .font(.system(size: 11, weight: .medium))
-                        .frame(width: 90)
+                        .frame(width: 100)
                         .padding(.horizontal, 8)
                         .padding(.vertical, 3)
                         .background(.quaternary.opacity(0.5), in: Capsule())
@@ -160,8 +198,8 @@ struct TodayListView: View {
                         .help("New space")
                 }
             }
-            .padding(.horizontal, 12)
-            .padding(.bottom, 8)
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
         }
     }
 
@@ -192,7 +230,7 @@ struct TodayListView: View {
         isEditingSpace = false
         editingSpace = nil
         spaceName = ""
-        focus = .list
+        focus = .field
     }
 
     private func delete(_ space: Space) {
@@ -212,6 +250,7 @@ struct TodayListView: View {
             }
         }
         selectedID = nil
+        if focus == .list { focus = .field }
     }
 
     private func cycleSpace(by delta: Int) {
@@ -236,18 +275,24 @@ struct TodayListView: View {
                         TaskRow(
                             title: task.title,
                             isDone: task.isDone,
-                            isSelected: task.id == selectedID
+                            isSelected: task.id == selectedID && focus == .list
                         ) {
                             selectedID = task.id
+                            focus = .list
                             toggle(task)
                         }
                     }
                 }
             }
-            .padding(.horizontal, 6)
-            .padding(.bottom, 6)
+            .padding(.horizontal, 10)
+            .padding(.bottom, 8)
         }
         .frame(maxHeight: 440)
+        .focusable()
+        .focusEffectDisabled()
+        .focused($focus, equals: .list)
+        .onKeyPress(action: handleListKey)
+        .onExitCommand(perform: onDismiss)
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -260,43 +305,57 @@ struct TodayListView: View {
     }
 
     private var emptyState: some View {
-        VStack(spacing: 6) {
-            Image(systemName: "sparkles")
-                .font(.system(size: 22))
-                .foregroundStyle(.tertiary)
-            Text("All clear")
-                .font(.system(size: 13))
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity)
-        .padding(.vertical, 36)
+        Text("All clear")
+            .font(.system(size: 13))
+            .foregroundStyle(.tertiary)
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 22)
     }
 
     private var footer: some View {
-        HStack {
-            Text("\u{2325}Space capture \u{00B7} 1\u{2013}9 tabs \u{00B7} \u{21E5} cycle")
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+        HStack(spacing: 14) {
+            hint("\u{2193}", "list")
+            hint("\u{2318}1\u{2013}9", "tabs")
+            hint("space", "done")
+            hint("\u{232B}", "delete")
             Spacer()
-            Button("Quit") { NSApp.terminate(nil) }
-                .buttonStyle(.plain)
-                .font(.system(size: 10))
-                .foregroundStyle(.tertiary)
+            hint("esc", "close")
         }
-        .padding(.horizontal, 14)
+        .padding(.horizontal, 20)
         .padding(.vertical, 8)
-        .background(.quaternary.opacity(0.3))
+        .background(.quaternary.opacity(0.25))
+    }
+
+    private func hint(_ key: String, _ label: String) -> some View {
+        HStack(spacing: 4) {
+            Text(key)
+                .font(.system(size: 10, weight: .semibold, design: .rounded))
+                .foregroundStyle(.tertiary)
+            Text(label)
+                .font(.system(size: 10))
+                .foregroundStyle(.quaternary)
+        }
     }
 
     // MARK: - Keyboard
 
-    private func handleKey(_ press: KeyPress) -> KeyPress.Result {
+    private func enterList() {
+        guard !visible.isEmpty else { return }
+        if selectedTask == nil { selectedID = visible.first?.id }
+        focus = .list
+    }
+
+    private func handleListKey(_ press: KeyPress) -> KeyPress.Result {
         switch press.key {
         case .downArrow:
             moveSelection(by: 1)
             return .handled
         case .upArrow:
-            moveSelection(by: -1)
+            if visible.firstIndex(where: { $0.id == selectedID }) == 0 {
+                focus = .field
+            } else {
+                moveSelection(by: -1)
+            }
             return .handled
         case .space:
             if let task = selectedTask { toggle(task) }
@@ -307,6 +366,9 @@ struct TodayListView: View {
         case .tab:
             cycleSpace(by: press.modifiers.contains(.shift) ? -1 : 1)
             return .handled
+        case .return:
+            focus = .field
+            return .handled
         default:
             break
         }
@@ -315,13 +377,14 @@ struct TodayListView: View {
             moveSelection(by: 1)
         case "k":
             moveSelection(by: -1)
-        case "1":
-            selectSpace(at: nil)
-        case "2", "3", "4", "5", "6", "7", "8", "9":
-            // Tab 1 is All, so space n lives on key n+1.
-            selectSpace(at: Int(press.characters)! - 2)
         default:
-            return .ignored
+            // Any other typed character jumps back to the field with it.
+            guard press.modifiers.isSubset(of: [.shift]),
+                  press.characters.count == 1,
+                  let char = press.characters.first, !char.isNewline
+            else { return .ignored }
+            text.append(char)
+            focus = .field
         }
         return .handled
     }
@@ -341,6 +404,16 @@ struct TodayListView: View {
     }
 
     // MARK: - Task actions
+
+    private func addTask() {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
+            context.insert(Task(title: trimmed, space: selectedSpace))
+            text = ""
+        }
+        try? context.save()
+    }
 
     private func toggle(_ task: Task) {
         if task.isDone {

@@ -3,18 +3,22 @@ import AppKit
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate {
     private var hotKey: HotKey?
-    private let capture = CapturePanelController()
+    private let panel = CapturePanelController()
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         hotKey = HotKey(keyCode: HotKeyConfig.keyCode, modifiers: HotKeyConfig.modifiers) { [weak self] in
-            self?.capture.toggle()
+            self?.panel.toggle()
         }
         if hotKey == nil {
             NSLog("Failed to register global hotkey — is another app holding \u{2325}Space?")
         }
-        // Dev aid: `TODAY_SHOW_CAPTURE=1 open Today.app` pops the panel without the hotkey.
+        // Dev aid: `TODAY_SHOW_CAPTURE=1 Today.app/Contents/MacOS/Today` pops the panel on launch.
         if ProcessInfo.processInfo.environment["TODAY_SHOW_CAPTURE"] != nil {
-            capture.show()
+            panel.show()
         }
+    }
+
+    func showPanel() {
+        panel.show()
     }
 }
