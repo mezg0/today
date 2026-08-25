@@ -17,7 +17,7 @@ final class CapturePanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         isOpaque = false
         backgroundColor = .clear
-        hasShadow = true
+        hasShadow = false  // drawn in SwiftUI so it hugs the rounded glass
         becomesKeyOnlyIfNeeded = false
         isReleasedWhenClosed = false
         animationBehavior = .none
@@ -56,10 +56,12 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         let frame = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        topY = frame.minY + frame.height * 0.88
+        // Visual top of the glass at 88% of the screen; the window itself
+        // extends further by the transparent shadow margin.
+        topY = frame.minY + frame.height * 0.88 + PanelView.shadowInset
         centerX = frame.midX
-        // Field + tabs + footer are ~150pt; leave a margin above the Dock.
-        let maxListHeight = topY - frame.minY - 150 - 24
+        // Field + tabs are ~110pt; keep the glass clear of the Dock.
+        let maxListHeight = frame.height * 0.88 - 110 - 24
 
         // Fresh SwiftUI root each time: resets the field and re-fires focus.
         let view = PanelView(
@@ -69,12 +71,6 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         )
         .modelContainer(Store.container)
         let hosting = NSHostingView(rootView: view)
-        // The glass backdrop is a layer that fills the hosting view, not the
-        // SwiftUI shape — mask the layer itself so the corners stay rounded.
-        hosting.wantsLayer = true
-        hosting.layer?.cornerRadius = PanelView.cornerRadius
-        hosting.layer?.cornerCurve = .continuous
-        hosting.layer?.masksToBounds = true
         panel.contentView = hosting
         resize(to: hosting.fittingSize)
 
@@ -104,8 +100,6 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
             height: size.height
         )
         panel.setFrame(frame, display: true)
-        // The window shadow is cached from the opaque region; refresh it or it lags the new size.
-        panel.invalidateShadow()
     }
 
     func windowDidResignKey(_ notification: Notification) {

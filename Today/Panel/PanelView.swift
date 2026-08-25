@@ -5,6 +5,8 @@ import SwiftData
 struct PanelView: View {
     static let width: CGFloat = 560
     static let cornerRadius: CGFloat = 16
+    // Transparent margin around the glass so the shadow has somewhere to land.
+    static let shadowInset: CGFloat = 40
 
     var maxListHeight: CGFloat
     var onDismiss: () -> Void
@@ -132,6 +134,10 @@ struct PanelView: View {
         .frame(width: Self.width)
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
         .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
+        // Our own shadow: the window's would follow its rectangle, not the rounded glass.
+        .shadow(color: .black.opacity(0.28), radius: 22, y: 10)
+        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
+        .padding(Self.shadowInset)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
         .onAppear {
             // Focus lands reliably only after the panel becomes key.
