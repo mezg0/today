@@ -74,23 +74,24 @@ struct CaptureView: View {
     private var spaceHints: some View {
         HStack(spacing: 4) {
             // Buttons carry the ⌘-digit shortcuts; they work while the field has focus.
-            ForEach(Array(spaces.prefix(9).enumerated()), id: \.element.id) { index, space in
-                Button {
-                    selectedSpace = selectedSpace?.id == space.id ? nil : space
-                } label: {
-                    hint(key: "\u{2318}\(index + 1)", label: space.name, isOn: selectedSpace?.id == space.id)
-                }
-                .buttonStyle(.plain)
-                .keyboardShortcut(KeyEquivalent(Character(String(index + 1))), modifiers: .command)
-            }
-            Spacer()
+            // Same numbering as the popover tabs: 1 = none, 2–9 = spaces.
             Button {
                 selectedSpace = nil
             } label: {
-                hint(key: "\u{2318}0", label: "no space", isOn: selectedSpace == nil)
+                hint(key: "\u{2318}1", label: "no space", isOn: selectedSpace == nil)
             }
             .buttonStyle(.plain)
-            .keyboardShortcut("0", modifiers: .command)
+            .keyboardShortcut("1", modifiers: .command)
+            ForEach(Array(spaces.prefix(8).enumerated()), id: \.element.id) { index, space in
+                Button {
+                    selectedSpace = selectedSpace?.id == space.id ? nil : space
+                } label: {
+                    hint(key: "\u{2318}\(index + 2)", label: space.name, isOn: selectedSpace?.id == space.id)
+                }
+                .buttonStyle(.plain)
+                .keyboardShortcut(KeyEquivalent(Character(String(index + 2))), modifiers: .command)
+            }
+            Spacer()
         }
         .padding(.horizontal, 14)
     }
