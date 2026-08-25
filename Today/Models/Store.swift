@@ -8,31 +8,25 @@ enum Store {
         let dir = URL.applicationSupportDirectory.appending(path: "Today", directoryHint: .isDirectory)
         try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
         let url = dir.appending(path: "Today.store")
+
+        let container: ModelContainer
         do {
             let config = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .automatic)
-            return try ModelContainer(for: schema, configurations: [config])
+            container = try ModelContainer(for: schema, configurations: [config])
         } catch {
             // No iCloud entitlement/team (e.g. unsigned dev build) — same store, sync off.
             NSLog("CloudKit unavailable, running local-only: \(error)")
-            let config = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
             do {
-                return try ModelContainer(for: schema, configurations: [config])
+                let config = ModelConfiguration(schema: schema, url: url, cloudKitDatabase: .none)
+                container = try ModelContainer(for: schema, configurations: [config])
             } catch {
-                fatalError("Could not open the local store: \(error)")
+                // Corrupt or unwritable store: stay usable for the session rather than die at launch.
+                NSLog("Local store unavailable, running in memory: \(error)")
+                let config = ModelConfiguration(schema: schema, isStoredInMemoryOnly: true)
+                container = try! ModelContainer(for: schema, configurations: [config])
             }
         }
+        container.mainContext.undoManager = UndoManager()
+        return container
     }()
-
-    static var context: ModelContext { container.mainContext }
-
-    static func addTask(titled title: String, in space: Space?) {
-        let trimmed = title.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty else { return }
-        context.insert(Task(title: trimmed, space: space))
-        try? context.save()
-    }
-
-    static func spaceCount() -> Int {
-        (try? context.fetchCount(FetchDescriptor<Space>())) ?? 0
-    }
 }

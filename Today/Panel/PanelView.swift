@@ -5,8 +5,8 @@ import SwiftData
 struct PanelView: View {
     static let width: CGFloat = 560
     static let cornerRadius: CGFloat = 16
-    // Transparent margin around the glass so the shadow has somewhere to land.
-    static let shadowInset: CGFloat = 40
+    // One shape for the glass, the clip, and the hosting-layer mask — they must agree.
+    static let shape = RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
 
     var maxListHeight: CGFloat
     var onDismiss: () -> Void
@@ -66,7 +66,8 @@ struct PanelView: View {
         }
         guard selectedSpace == nil else { return scoped }
         // All view: inbox first, then spaces in their order; newest first within.
-        let order = Dictionary(uniqueKeysWithValues: spaces.enumerated().map { ($1.id, $0 + 1) })
+        // Duplicate ids are possible after a CloudKit merge; never trap on them.
+        let order = Dictionary(spaces.enumerated().map { ($1.id, $0 + 1) }, uniquingKeysWith: { a, _ in a })
         return scoped.sorted { a, b in
             let oa = a.space.flatMap { order[$0.id] } ?? 0
             let ob = b.space.flatMap { order[$0.id] } ?? 0
@@ -121,23 +122,21 @@ struct PanelView: View {
     // MARK: - Body
 
     var body: some View {
+        // Derived once per pass; the filters and sort aren't free on every keystroke.
+        let rows = self.rows
         VStack(spacing: 0) {
             field
             hairline
             tabs
-            if visible.isEmpty {
+            if rows.isEmpty {
                 emptyState
             } else {
-                list
+                list(rows: rows)
             }
         }
         .frame(width: Self.width)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-        .clipShape(RoundedRectangle(cornerRadius: Self.cornerRadius, style: .continuous))
-        // Our own shadow: the window's would follow its rectangle, not the rounded glass.
-        .shadow(color: .black.opacity(0.28), radius: 22, y: 10)
-        .shadow(color: .black.opacity(0.12), radius: 3, y: 1)
-        .padding(Self.shadowInset)
+        .glassEffect(.regular, in: Self.shape)
+        .clipShape(Self.shape)
         .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
         .onAppear {
             // Focus lands reliably only after the panel becomes key.
@@ -309,7 +308,7 @@ struct PanelView: View {
 
     // MARK: - List
 
-    private var list: some View {
+    private func list(rows: [Row]) -> some View {
         ScrollViewReader { proxy in
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
@@ -378,12 +377,9 @@ struct PanelView: View {
                 .onSubmit(commitTaskEdit)
                 .onExitCommand(perform: cancelTaskEdit)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(.selection.opacity(0.85))
-        )
+        .padding(.horizontal, TaskRow.horizontalPadding)
+        .padding(.vertical, TaskRow.verticalPadding)
+        .background(TaskRow.shape.fill(.selection.opacity(TaskRow.selectionOpacity)))
     }
 
     private func beginEditing(_ task: Task) {
@@ -462,6 +458,12 @@ struct PanelView: View {
         default:
             break
         }
+        if press.modifiers.contains(.command), press.characters == "z" {
+            // ⌫ is one keystroke from data loss; ⌘Z brings it back.
+            withAnimation(quick) { context.undoManager?.undo() }
+            try? context.save()
+            return .handled
+        }
         switch press.characters {
         case "j":
             moveSelection(by: 1)
@@ -538,7 +540,11 @@ struct PanelView: View {
     }
 
     private func delete(_ task: Task) {
-        moveSelection(by: task.id == visible.last?.id ? -1 : 1)
+        // Only the highlight on the deleted row needs a new home.
+        if selectedID == task.id, let index = visible.firstIndex(where: { $0.id == task.id }) {
+            let remaining = visible.filter { $0.id != task.id }
+            selectedID = remaining.indices.contains(index) ? remaining[index].id : remaining.last?.id
+        }
         withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.85))) {
             context.delete(task)
         }

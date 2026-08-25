@@ -17,7 +17,9 @@ final class CapturePanel: NSPanel {
         collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary]
         isOpaque = false
         backgroundColor = .clear
-        hasShadow = false  // drawn in SwiftUI so it hugs the rounded glass
+        // Window-server shadow: shaped from the content's alpha, drawn outside
+        // the frame, never hit-tested. Must be invalidated whenever content changes size.
+        hasShadow = true
         becomesKeyOnlyIfNeeded = false
         isReleasedWhenClosed = false
         animationBehavior = .none
@@ -34,6 +36,11 @@ final class CapturePanel: NSPanel {
 
 @MainActor
 final class CapturePanelController: NSObject, NSWindowDelegate {
+    // Space the field + tabs take above the list, and clearance to keep off the Dock.
+    private static let chromeHeight: CGFloat = 110
+    private static let dockMargin: CGFloat = 24
+    private static let topAnchor: CGFloat = 0.88
+
     private lazy var panel: CapturePanel = {
         let panel = CapturePanel()
         panel.delegate = self
@@ -56,12 +63,9 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { $0.frame.contains(mouse) } ?? NSScreen.main
         let frame = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
-        // Visual top of the glass at 88% of the screen; the window itself
-        // extends further by the transparent shadow margin.
-        topY = frame.minY + frame.height * 0.88 + PanelView.shadowInset
+        topY = frame.minY + frame.height * Self.topAnchor
         centerX = frame.midX
-        // Field + tabs are ~110pt; keep the glass clear of the Dock.
-        let maxListHeight = frame.height * 0.88 - 110 - 24
+        let maxListHeight = (topY - frame.minY) - Self.chromeHeight - Self.dockMargin
 
         // Fresh SwiftUI root each time: resets the field and re-fires focus.
         let view = PanelView(
@@ -71,6 +75,12 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         )
         .modelContainer(Store.container)
         let hosting = NSHostingView(rootView: view)
+        // Belt and braces with PanelView's clipShape: the glass backdrop is a
+        // layer sized to the hosting view, so mask that layer to the same shape.
+        hosting.wantsLayer = true
+        hosting.layer?.cornerRadius = PanelView.cornerRadius
+        hosting.layer?.cornerCurve = .continuous
+        hosting.layer?.masksToBounds = true
         panel.contentView = hosting
         resize(to: hosting.fittingSize)
 
@@ -85,10 +95,14 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
                 panel.animator().alphaValue = 1
             }
         }
+        // The first shadow is computed before the glass has drawn; redo it after.
+        DispatchQueue.main.async { [weak self] in self?.panel.invalidateShadow() }
     }
 
     func dismiss() {
         panel.orderOut(nil)
+        // Tear the view down so nothing (focus re-homing, timers) keeps running offscreen.
+        panel.contentView = NSView()
     }
 
     private func resize(to size: CGSize) {
@@ -100,10 +114,15 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
             height: size.height
         )
         panel.setFrame(frame, display: true)
+        panel.invalidateShadow()
     }
 
     func windowDidResignKey(_ notification: Notification) {
-        // Click anywhere else and the panel is gone, Spotlight-style.
-        dismiss()
+        // Click anywhere else and the panel is gone, Spotlight-style. Deferred so a
+        // context menu that briefly borrows key status doesn't tear the panel down.
+        DispatchQueue.main.async { [weak self] in
+            guard let self, panel.isVisible, !panel.isKeyWindow else { return }
+            dismiss()
+        }
     }
 }

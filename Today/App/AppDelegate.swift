@@ -13,7 +13,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
             NSLog("Failed to register global hotkey — is another app holding \u{2325}Space?")
         }
         // Dev aid: `TODAY_SHOW_CAPTURE=1 Today.app/Contents/MacOS/Today` pops the panel on launch.
-        if ProcessInfo.processInfo.environment["TODAY_SHOW_CAPTURE"] != nil {
+        if ProcessInfo.processInfo.environment["TODAY_SHOW_CAPTURE"] == "1" {
             panel.show()
         }
     }

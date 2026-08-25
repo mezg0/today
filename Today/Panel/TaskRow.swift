@@ -1,6 +1,12 @@
 import SwiftUI
 
 struct TaskRow: View {
+    // Shared with the inline editor so it sits exactly where the row was.
+    static let shape = RoundedRectangle(cornerRadius: 7, style: .continuous)
+    static let horizontalPadding: CGFloat = 10
+    static let verticalPadding: CGFloat = 7
+    static let selectionOpacity = 0.85
+
     let title: String
     let isDone: Bool
     let isSettled: Bool
@@ -20,12 +26,9 @@ struct TaskRow: View {
                 .lineLimit(2)
             Spacer(minLength: 0)
         }
-        .padding(.horizontal, 10)
-        .padding(.vertical, 7)
-        .background(
-            RoundedRectangle(cornerRadius: 7, style: .continuous)
-                .fill(rowFill)
-        )
+        .padding(.horizontal, Self.horizontalPadding)
+        .padding(.vertical, Self.verticalPadding)
+        .background(Self.shape.fill(rowFill))
         .opacity(isSettled ? 0.55 : 1)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
@@ -34,7 +37,7 @@ struct TaskRow: View {
     }
 
     private var rowFill: AnyShapeStyle {
-        if isSelected { return AnyShapeStyle(.selection.opacity(0.85)) }
+        if isSelected { return AnyShapeStyle(.selection.opacity(Self.selectionOpacity)) }
         if isHovered { return AnyShapeStyle(.primary.opacity(0.05)) }
         return AnyShapeStyle(.clear)
     }

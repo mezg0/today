@@ -44,10 +44,8 @@ final class HotKey {
         let registerStatus = RegisterEventHotKey(
             keyCode, modifiers, hotKeyID, GetEventDispatcherTarget(), 0, &hotKeyRef
         )
-        guard registerStatus == noErr else {
-            if let handlerRef { RemoveEventHandler(handlerRef) }
-            return nil
-        }
+        // deinit still runs on a failed init, so leave the cleanup to it.
+        guard registerStatus == noErr else { return nil }
     }
 
     deinit {
