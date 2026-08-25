@@ -467,6 +467,8 @@ struct PanelView: View {
     }
 
     private func handleListKey(_ press: KeyPress) -> KeyPress.Result {
+        // Ancestors see descendants' key presses too; leave the inline editor alone.
+        guard focus == .list else { return .ignored }
         switch press.key {
         case .downArrow:
             moveSelection(by: 1)
@@ -481,7 +483,7 @@ struct PanelView: View {
         case .space:
             if let task = selectedTask { toggle(task) }
             return .handled
-        case .delete:
+        case .delete, .deleteForward:
             if let task = selectedTask { delete(task) }
             return .handled
         case .tab:
@@ -498,11 +500,16 @@ struct PanelView: View {
             moveSelection(by: 1)
         case "k":
             moveSelection(by: -1)
+        case "\u{7F}", "\u{8}":
+            // Backspace arrives as a raw DEL/BS character on some paths.
+            if let task = selectedTask { delete(task) }
         default:
-            // Any other typed character jumps back to the field with it.
+            // Any other *printable* character jumps back to the field with it.
             guard press.modifiers.isSubset(of: [.shift]),
                   press.characters.count == 1,
-                  let char = press.characters.first, !char.isNewline
+                  let char = press.characters.first,
+                  let scalar = char.unicodeScalars.first,
+                  !scalar.properties.generalCategory.isControl
             else { return .ignored }
             text.append(char)
             focus = .field
@@ -569,6 +576,15 @@ struct PanelView: View {
             context.delete(task)
         }
         try? context.save()
+    }
+}
+
+private extension Unicode.GeneralCategory {
+    var isControl: Bool {
+        switch self {
+        case .control, .format, .surrogate, .privateUse, .unassigned: true
+        default: false
+        }
     }
 }
 
