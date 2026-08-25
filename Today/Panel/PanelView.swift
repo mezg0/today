@@ -141,6 +141,12 @@ struct PanelView: View {
             // Focus lands reliably only after the panel becomes key.
             DispatchQueue.main.async { focus = .field }
         }
+        .onChange(of: focus) { _, focus in
+            // Keys must always land somewhere while the panel is up.
+            if focus == nil {
+                DispatchQueue.main.async { if self.focus == nil { self.focus = .field } }
+            }
+        }
     }
 
     private var hairline: some View {
@@ -261,7 +267,7 @@ struct PanelView: View {
         withAnimation(quick) { isEditingSpace = false }
         editingSpace = nil
         spaceName = ""
-        focus = .field
+        DispatchQueue.main.async { focus = .field }
     }
 
     private func delete(_ space: Space) {
@@ -390,7 +396,8 @@ struct PanelView: View {
     private func cancelTaskEdit() {
         editingTaskID = nil
         editText = ""
-        focus = .list
+        // The editor is being torn down this pass; focus only sticks after it's gone.
+        DispatchQueue.main.async { focus = .list }
     }
 
     private func sectionHeader(_ title: String) -> some View {
