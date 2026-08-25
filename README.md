@@ -2,7 +2,7 @@
 
 A small todo app for macOS that lives in the menubar. Press ⌥Space from any
 app and a floating panel appears: a text field, a row of tabs for your
-"spaces", and the list of what's left today. Everything is done from the
+"spaces", and the list of what's left today. You drive all of it from the
 keyboard.
 
 Requires macOS 26, because the panel uses Liquid Glass.
@@ -59,8 +59,8 @@ Signed builds mirror it to the private CloudKit container
 `iCloud.com.brandongomes.today`; unsigned builds detect the missing entitlement
 and stay local. See `Today/Models/Store.swift`.
 
-The Xcode project is generated from `project.yml`. After editing it, run
-`brew install xcodegen && xcodegen`.
+`xcodegen` generates the Xcode project from `project.yml`. After editing it,
+run `brew install xcodegen && xcodegen`.
 
-The completion sound is synthesised by `scripts/make_sounds.py`. Edit the
-numbers, run it again, rebuild.
+`scripts/make_sounds.py` synthesises the completion sound. Edit the numbers,
+run it again, rebuild.
