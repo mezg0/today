@@ -34,6 +34,7 @@ struct PanelView: View {
 
     private enum Focus { case field, list, spaceEditor, taskEditor }
     @FocusState private var focus: Focus?
+    @Namespace private var glass
 
     // MARK: - Motion
 
@@ -129,11 +130,7 @@ struct PanelView: View {
             }
         }
         .frame(width: Self.width)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.primary.opacity(0.09))
-        )
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
         .onGeometryChange(for: CGSize.self) { $0.size } action: { onSizeChange($0) }
         .onAppear {
             // Focus lands reliably only after the panel becomes key.
@@ -190,16 +187,19 @@ struct PanelView: View {
 
     private var tabs: some View {
         ScrollView(.horizontal, showsIndicators: false) {
+            // The container lets the selected pill's glass morph between tabs.
+            GlassEffectContainer(spacing: 8) {
             HStack(spacing: 2) {
                 // Pills carry the ⌘-digit shortcuts, so they fire whatever has focus.
-                SpacePill(label: "All", isSelected: selectedSpace == nil) {
+                SpacePill(label: "All", isSelected: selectedSpace == nil, glass: glass) {
                     selectSpace(at: nil)
                 }
                 .keyboardShortcut("1", modifiers: .command)
                 ForEach(Array(spaces.enumerated()), id: \.element.id) { index, space in
                     let pill = SpacePill(
                         label: space.name,
-                        isSelected: selectedSpace?.id == space.id
+                        isSelected: selectedSpace?.id == space.id,
+                        glass: glass
                     ) {
                         selectSpace(at: index)
                     }
@@ -225,12 +225,13 @@ struct PanelView: View {
                         .onSubmit(commitSpaceEdit)
                         .onExitCommand(perform: cancelSpaceEdit)
                 } else {
-                    SpacePill(label: "+", isSelected: false) { beginEditing(nil) }
+                    SpacePill(label: "+", isSelected: false, glass: glass) { beginEditing(nil) }
                         .help("New space")
                 }
             }
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
+            }
         }
     }
 
@@ -544,6 +545,7 @@ private extension Unicode.GeneralCategory {
 private struct SpacePill: View {
     let label: String
     let isSelected: Bool
+    let glass: Namespace.ID
     var action: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -554,20 +556,18 @@ private struct SpacePill: View {
             Text(label)
                 .font(.system(size: 12, weight: .medium))
                 .foregroundStyle(isSelected ? AnyShapeStyle(.primary) : AnyShapeStyle(.secondary))
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(fill, in: Capsule())
-            .contentShape(Capsule())
+                .padding(.horizontal, 11)
+                .padding(.vertical, 5)
+                .background(
+                    Capsule().fill(.primary.opacity(isHovered && !isSelected ? 0.06 : 0))
+                )
+                .contentShape(Capsule())
         }
         .buttonStyle(.plain)
         .focusable(false)
+        .glassEffect(isSelected ? .regular.tint(.accentColor.opacity(0.35)).interactive() : .identity, in: Capsule())
+        .glassEffectID(isSelected ? "selected" : label, in: glass)
         .onHover { isHovered = $0 }
         .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
-    }
-
-    private var fill: AnyShapeStyle {
-        if isSelected { return AnyShapeStyle(.tint.opacity(0.16)) }
-        if isHovered { return AnyShapeStyle(.primary.opacity(0.06)) }
-        return AnyShapeStyle(.clear)
     }
 }

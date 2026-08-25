@@ -2,6 +2,8 @@
 
 A personal menubar todo app for macOS. Tiny feature surface, obsessive polish.
 
+Requires macOS 26 (the panel is Liquid Glass).
+
 ## Setup (30 seconds)
 
 1. Open `Today.xcodeproj`.
