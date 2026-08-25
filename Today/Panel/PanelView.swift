@@ -165,10 +165,19 @@ struct PanelView: View {
                 .font(.system(size: 17, weight: .medium))
                 .foregroundStyle(.secondary)
                 .frame(width: 22, height: 22)
-            TextField(selectedSpace.map { "Add to \($0.name)" } ?? "What needs doing?", text: $text)
+            TextField("", text: $text)
                 .textFieldStyle(.plain)
                 .font(.system(size: 20))
                 .focused($focus, equals: .field)
+                // Own placeholder: AppKit's shifts ~1pt when the field editor takes over on focus.
+                .overlay(alignment: .leading) {
+                    if text.isEmpty {
+                        Text(selectedSpace.map { "Add to \($0.name)" } ?? "What needs doing?")
+                            .font(.system(size: 20))
+                            .foregroundStyle(.tertiary)
+                            .allowsHitTesting(false)
+                    }
+                }
                 .onSubmit(addTask)
                 .onKeyPress(.downArrow) {
                     enterList()
@@ -387,7 +396,7 @@ struct PanelView: View {
     private func commitTaskEdit() {
         defer { cancelTaskEdit() }
         let title = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty, let task = visible.first(where: { $0.id == editingTaskID }) else { return }
+        guard !title.isEmpty, let task = tasks.first(where: { $0.id == editingTaskID }) else { return }
         task.title = title
         try? context.save()
     }
