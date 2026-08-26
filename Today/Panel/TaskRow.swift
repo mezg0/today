@@ -67,6 +67,5 @@ struct TaskRow: View {
                 .opacity(isDone ? 1 : 0)
         }
         .frame(width: 18, height: 18)
-        .animation(.spring(response: 0.28, dampingFraction: 0.62), value: isDone)
     }
 }
