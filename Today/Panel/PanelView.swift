@@ -14,7 +14,6 @@ struct PanelView: View {
     var onSizeChange: (CGSize) -> Void
 
     @Environment(\.modelContext) private var context
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @Query(sort: \Task.createdAt, order: .reverse) private var tasks: [Task]
     @Query(sort: \Space.sortOrder) private var spaces: [Space]
     @AppStorage("selectedSpaceID") private var selectedSpaceID = ""
@@ -41,14 +40,6 @@ struct PanelView: View {
 
     enum Focus { case field, list, spaceEditor, taskEditor, detailTitle, detailNotes }
     @FocusState private var focus: Focus?
-
-    // MARK: - Motion
-
-    private func motion(_ animation: Animation) -> Animation? {
-        reduceMotion ? nil : animation
-    }
-
-    private var quick: Animation? { motion(.snappy(duration: 0.2)) }
 
     // MARK: - Derived data
 
@@ -139,16 +130,8 @@ struct PanelView: View {
                     onBack: closeDetail,
                     onToggle: { toggle(task) }
                 )
-                .transition(.asymmetric(
-                    insertion: .move(edge: .trailing).combined(with: .opacity),
-                    removal: .move(edge: .trailing).combined(with: .opacity)
-                ))
             } else {
                 listScreen
-                    .transition(.asymmetric(
-                        insertion: .move(edge: .leading).combined(with: .opacity),
-                        removal: .move(edge: .leading).combined(with: .opacity)
-                    ))
             }
         }
         .frame(width: Self.width)
@@ -288,7 +271,7 @@ struct PanelView: View {
     private func beginEditing(_ space: Space?) {
         editingSpace = space
         spaceName = space?.name ?? ""
-        withAnimation(quick) { isEditingSpace = true }
+        isEditingSpace = true
         DispatchQueue.main.async { focus = .spaceEditor }
     }
 
@@ -296,7 +279,7 @@ struct PanelView: View {
         let name = spaceName.trimmingCharacters(in: .whitespacesAndNewlines)
         defer { cancelSpaceEdit() }
         guard !name.isEmpty else { return }
-        withAnimation(quick) {
+        do {
             if let editingSpace {
                 editingSpace.name = name
             } else {
@@ -309,7 +292,7 @@ struct PanelView: View {
     }
 
     private func cancelSpaceEdit() {
-        withAnimation(quick) { isEditingSpace = false }
+        isEditingSpace = false
         editingSpace = nil
         spaceName = ""
         DispatchQueue.main.async { focus = .field }
@@ -317,14 +300,14 @@ struct PanelView: View {
 
     private func delete(_ space: Space) {
         if selectedSpace?.id == space.id { selectedSpaceID = "" }
-        withAnimation(quick) {
+        do {
             context.delete(space)
         }
         try? context.save()
     }
 
     private func selectSpace(at index: Int?) {
-        withAnimation(quick) {
+        do {
             if let index, spaces.indices.contains(index) {
                 selectedSpaceID = spaces[index].id.uuidString
             } else {
@@ -374,7 +357,6 @@ struct PanelView: View {
                                     Button("Rename") { beginEditing(task) }
                                     Button("Delete", role: .destructive) { delete(task) }
                                 }
-                                .transition(.opacity)
                             }
                         }
                     }
@@ -382,17 +364,16 @@ struct PanelView: View {
                 .padding(.horizontal, 8)
                 .padding(.top, 4)
                 .padding(.bottom, 8)
-                .animation(quick, value: rows.map(\.id))
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listContentHeight = $0 }
             }
             .onChange(of: selectedID) { _, id in
                 // No anchor = scroll only as far as needed to reveal the row.
                 guard let id, focus == .list else { return }
-                withAnimation(quick) { proxy.scrollTo(id.uuidString) }
+                do { proxy.scrollTo(id.uuidString) }
             }
             .onChange(of: focus) { _, focus in
                 if focus == .field, let first = rows.first {
-                    withAnimation(quick) { proxy.scrollTo(first.id, anchor: .top) }
+                    do { proxy.scrollTo(first.id, anchor: .top) }
                 }
             }
         }
@@ -410,11 +391,9 @@ struct PanelView: View {
     private func openDetail(_ task: Task) {
         selectedID = task.id
         focus = nil
-        withAnimation(motion(.snappy(duration: 0.25))) {
-            detailTaskID = task.id
-        } completion: {
-            restoreKeyboard(to: .detailNotes)
-        }
+        detailTaskID = task.id
+            // The screen exists only after the next pass; focus sticks then.
+            DispatchQueue.main.async { restoreKeyboard(to: .detailNotes) }
     }
 
     private func closeDetail() {
@@ -424,14 +403,9 @@ struct PanelView: View {
         }
         try? context.save()
         focus = nil
-        // Re-home focus only after the screen is gone: the transition keeps the
-        // editors alive for the whole animation, and they take focus back if we
-        // hand it over early.
-        withAnimation(motion(.snappy(duration: 0.25))) {
-            detailTaskID = nil
-        } completion: {
-            restoreKeyboard(to: .list)
-        }
+        detailTaskID = nil
+            // The screen exists only after the next pass; focus sticks then.
+            DispatchQueue.main.async { restoreKeyboard(to: .list) }
     }
 
     // AppKit-arcana: tearing down a focused NSTextView leaves the panel with a
@@ -542,7 +516,7 @@ struct PanelView: View {
         }
         if press.modifiers.contains(.command), press.characters == "z" {
             // ⌫ is one keystroke from data loss; ⌘Z brings it back.
-            withAnimation(quick) { context.undoManager?.undo() }
+            context.undoManager?.undo()
             try? context.save()
             return .handled
         }
@@ -587,7 +561,7 @@ struct PanelView: View {
     private func addTask() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.85))) {
+        do {
             context.insert(Task(title: trimmed, space: selectedSpace))
             text = ""
         }
@@ -596,7 +570,7 @@ struct PanelView: View {
 
     private func toggle(_ task: Task) {
         if task.isDone {
-            withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.8))) {
+            do {
                 task.completedAt = nil
             }
         } else {
@@ -607,7 +581,7 @@ struct PanelView: View {
 
     private func complete(_ task: Task) {
         let id = task.id
-        withAnimation(motion(.spring(response: 0.28, dampingFraction: 0.62))) {
+        do {
             task.completedAt = .now
             _ = settling.insert(id)
         }
@@ -615,7 +589,7 @@ struct PanelView: View {
         // `_Concurrency.` because our model shadows Swift's Task type.
         _Concurrency.Task { @MainActor in
             try? await _Concurrency.Task.sleep(for: .seconds(0.65))
-            withAnimation(motion(.spring(response: 0.45, dampingFraction: 0.85))) {
+            do {
                 _ = settling.remove(id)
             }
         }
@@ -627,7 +601,7 @@ struct PanelView: View {
             let remaining = visible.filter { $0.id != task.id }
             selectedID = remaining.indices.contains(index) ? remaining[index].id : remaining.last?.id
         }
-        withAnimation(motion(.spring(response: 0.3, dampingFraction: 0.85))) {
+        do {
             context.delete(task)
         }
         try? context.save()
@@ -648,7 +622,6 @@ private struct SpacePill: View {
     let isSelected: Bool
     var action: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     var body: some View {
@@ -664,7 +637,6 @@ private struct SpacePill: View {
         .buttonStyle(.plain)
         .focusable(false)
         .onHover { isHovered = $0 }
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
     }
 
     private var fill: AnyShapeStyle {

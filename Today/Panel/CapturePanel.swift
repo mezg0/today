@@ -84,17 +84,7 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         panel.contentView = hosting
         resize(to: hosting.fittingSize)
 
-        // A hair of fade reads as "instant" but hides the first-frame pop.
-        let reduceMotion = NSWorkspace.shared.accessibilityDisplayShouldReduceMotion
-        panel.alphaValue = reduceMotion ? 1 : 0
         panel.makeKeyAndOrderFront(nil)
-        if !reduceMotion {
-            NSAnimationContext.runAnimationGroup { ctx in
-                ctx.duration = 0.08
-                ctx.timingFunction = CAMediaTimingFunction(name: .easeOut)
-                panel.animator().alphaValue = 1
-            }
-        }
         // The first shadow is computed before the glass has drawn; redo it after.
         DispatchQueue.main.async { [weak self] in self?.panel.invalidateShadow() }
     }

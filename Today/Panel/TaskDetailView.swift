@@ -10,7 +10,6 @@ struct TaskDetailView: View {
     var onBack: () -> Void
     var onToggle: () -> Void
 
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     // Leading edge of the title text: back button + checkmark + spacings.
     private static let titleInset: CGFloat = 18 + 22 + 12 + 18 + 10
@@ -55,11 +54,11 @@ struct TaskDetailView: View {
                         .opacity(task.isDone ? 1 : 0)
                 }
                 .frame(width: 18, height: 18)
+        .animation(.spring(response: 0.28, dampingFraction: 0.62), value: task.isDone)
                 .contentShape(Circle())
             }
             .buttonStyle(.plain)
             .focusable(false)
-            .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.62), value: task.isDone)
 
             TextField("", text: $task.title)
                 .textFieldStyle(.plain)

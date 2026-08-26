@@ -15,8 +15,6 @@ struct TaskRow: View {
     let isSelected: Bool
     let hasNotes: Bool
     var onToggle: () -> Void
-
-    @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var isHovered = false
 
     var body: some View {
@@ -41,7 +39,6 @@ struct TaskRow: View {
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
         .onTapGesture(perform: onToggle)
-        .animation(reduceMotion ? nil : .easeOut(duration: 0.12), value: isHovered)
     }
 
     private var rowFill: AnyShapeStyle {
@@ -62,6 +59,6 @@ struct TaskRow: View {
                 .opacity(isDone ? 1 : 0)
         }
         .frame(width: 18, height: 18)
-        .animation(reduceMotion ? nil : .spring(response: 0.28, dampingFraction: 0.62), value: isDone)
+        .animation(.spring(response: 0.28, dampingFraction: 0.62), value: isDone)
     }
 }
