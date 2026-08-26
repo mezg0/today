@@ -151,6 +151,7 @@
 				LastUpgradeCheck = 1430;
 				TargetAttributes = {
 					0B74C076C46D23860B1EDE9D = {
+						DevelopmentTeam = 7M3B48C774;
 						ProvisioningStyle = Automatic;
 					};
 				};
@@ -279,6 +280,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7M3B48C774;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Today/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (
@@ -356,6 +358,7 @@
 				CODE_SIGN_STYLE = Automatic;
 				COMBINE_HIDPI_IMAGES = YES;
 				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = 7M3B48C774;
 				ENABLE_HARDENED_RUNTIME = YES;
 				INFOPLIST_FILE = Today/Info.plist;
 				LD_RUNPATH_SEARCH_PATHS = (

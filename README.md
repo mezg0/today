@@ -125,6 +125,22 @@ a team, the store is mirrored to the private CloudKit container
 `iCloud.com.brandongomes.today`. Unsigned builds detect the missing entitlement
 and keep data local. See `Today/Models/Store.swift`.
 
+## Releasing
+
+`scripts/release.sh 0.2.0` archives the app, signs it with Developer ID,
+submits it to Apple for notarization, staples the ticket, and attaches the zip
+to a GitHub Release tagged `v0.2.0`. Two one-time steps are needed first, both
+tied to the Apple account:
+
+1. In Xcode, Settings › Accounts › Manage Certificates, add a Developer ID
+   Application certificate.
+2. Store a notarization credential:
+   `xcrun notarytool store-credentials Today --apple-id <your Apple ID> --team-id 7M3B48C774`,
+   using an app-specific password from appleid.apple.com.
+
+Downloads from the Releases page open without a Gatekeeper warning and sync
+through iCloud.
+
 ## Changing things
 
 - Hotkey: if `⌥Space` is already used on your Mac (some input source switchers
