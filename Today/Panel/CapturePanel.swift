@@ -40,6 +40,8 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
     private static let chromeHeight: CGFloat = 110
     private static let dockMargin: CGFloat = 24
     private static let topAnchor: CGFloat = 0.88
+    // Absolute ceiling regardless of screen size; a 4K display should not give a 1800pt panel.
+    private static let maxPanelHeight: CGFloat = 680
 
     private lazy var panel: CapturePanel = {
         let panel = CapturePanel()
@@ -65,7 +67,8 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
         let frame = screen?.visibleFrame ?? NSRect(x: 0, y: 0, width: 1440, height: 900)
         topY = frame.minY + frame.height * Self.topAnchor
         centerX = frame.midX
-        let maxListHeight = (topY - frame.minY) - Self.chromeHeight - Self.dockMargin
+        let fitsScreen = (topY - frame.minY) - Self.chromeHeight - Self.dockMargin
+        let maxListHeight = min(fitsScreen, Self.maxPanelHeight - Self.chromeHeight)
 
         // Fresh SwiftUI root each time: resets the field and re-fires focus.
         let view = PanelView(
