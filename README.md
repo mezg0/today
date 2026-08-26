@@ -25,12 +25,19 @@ follows from that.
 
 ## Requirements
 
-- macOS 26 or later.
-- Xcode, to build it. There is no prebuilt download.
-- An Apple Developer team if you want iCloud sync. Without one the app still
-  builds and runs, with data kept on the local Mac only.
+macOS 26 or later.
 
 ## Install
+
+Download `Today-<version>.zip` from the
+[Releases page](https://github.com/mezg0/today/releases), unzip it, and move
+`Today.app` to your Applications folder. It is signed and notarized, so it
+opens without a warning, and it syncs through iCloud.
+
+### Building it yourself
+
+You need Xcode, and an Apple Developer team if you want iCloud sync. Without a
+team the app still builds and runs, with data kept on the local Mac only.
 
 1. Open `Today.xcodeproj` in Xcode.
 2. Select the Today target, open Signing & Capabilities, and choose your team.
