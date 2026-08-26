@@ -1,141 +1,119 @@
 # Today
 
-**A floating, keyboard-only todo panel for macOS.**
-
-Press ⌥Space in any app and it appears over whatever you were doing. Press Esc
-and it is gone. There is no window to find, no Dock icon, and nothing to click.
-The panel is the entire app.
+Today is a todo list for macOS that runs as a floating panel. Press ⌥Space to
+open it over the current app, add or work through tasks with the keyboard, and
+press Esc to close it. It has no main window and no Dock icon; a menubar icon
+provides Open, Launch at Login, and Quit.
 
 ![The Today panel open over the desktop](docs/screenshot.png)
 
-> Requires macOS 26. The panel is Liquid Glass.
+## Requirements
 
----
+- macOS 26 or later.
+- Xcode, to build it. There is no prebuilt download.
+- An Apple Developer team if you want iCloud sync. Without one the app still
+  builds and runs, with data kept on the local Mac only.
 
-## What it does
-
-### Capture
-The field at the top is focused the moment the panel opens. Type, press Enter,
-and the task is at the top of the list. The panel stays open so you can keep
-going, or Esc back to what you were doing.
-
-### Spaces
-Tabs under the field split tasks into spaces such as *Work* and *Home*.
-
-- **⌘1** shows everything, grouped by space.
-- **⌘2 – ⌘9** jump to one space. Whatever tab is showing is where new tasks go.
-- **⌘N** or the `+` pill creates a space. Right-click a space to rename or delete it.
-  Deleting a space keeps its tasks and unfiles them.
-
-### Today's list
-Everything not done, plus what you finished today. Move with the arrows, complete
-with Space.
-
-A completed task holds its place for a beat, then settles into a **Done**
-section at the bottom. When the last task in a tab is done, the list collapses
-to one line:
-
-> All clear · 4 done today
-
-### Snooze
-**⌘S** hides a task until tomorrow. It waits in a **Snoozed** section at the
-bottom, dimmed, where ⌘S wakes it early. At midnight it comes back on its own,
-at the top of its space.
-
-### Order
-New tasks go to the top. **⌥↑** and **⌥↓** move a task within its space.
-
-### Task screen
-Enter (or double-click) opens a task in place: the title, editable, with notes
-underneath. The panel keeps its height, so nothing jumps. Everything saves as
-you type; Esc returns you to the same row.
-
-### Undo
-**⌘Z** reverses a completion, a snooze, a delete, or an edit.
-
-### Sync
-Tasks live in a SwiftData store and mirror to your private iCloud container
-when the app is signed with a team. Unsigned builds stay local.
-
-### Nothing else
-No due dates, tags, priorities, settings, or onboarding. The menubar icon has
-three items: Open, Launch at Login, Quit.
-
----
-
-## Keys
-
-#### Anywhere
-
-| Key | |
-| :-- | :-- |
-| ⌥Space | Open or close the panel |
-
-#### In the field
-
-| Key | |
-| :-- | :-- |
-| Enter | Add what you typed to the current tab |
-| ↓ | Move into the list |
-| Esc | Clear the field, or close the panel if it is empty |
-
-#### Tabs
-
-| Key | |
-| :-- | :-- |
-| ⌘1 | Show everything |
-| ⌘2 – ⌘9 | Show a space |
-| Tab / ⇧Tab | Cycle through tabs |
-| ⌘N | New space |
-
-#### In the list
-
-| Key | |
-| :-- | :-- |
-| ↑ / ↓ | Move through the list |
-| Space | Complete, or un-complete |
-| Enter | Open the task |
-| ⌘S | Snooze until tomorrow, or wake |
-| ⌥↑ / ⌥↓ | Move the task up or down |
-| ⌘⌫ | Delete |
-| ⌘Z | Undo |
-| ↑ past the top, or any letter | Back to the field |
-
-#### In a task
-
-| Key | |
-| :-- | :-- |
-| Enter (in the title) | Jump to notes |
-| ⌘↩ | Complete, or un-complete |
-| Esc | Back to the list, same row |
-
----
-
-## Setup
+## Install
 
 1. Open `Today.xcodeproj` in Xcode.
-2. Select the **Today** target › *Signing & Capabilities* › pick your team.
-   You only do this once; it is what turns on iCloud sync.
-3. ⌘R.
+2. Select the Today target, open Signing & Capabilities, and choose your team.
+   This enables iCloud sync and only needs doing once.
+3. Run with ⌘R. The app appears in the menubar.
 
-Or from the terminal, unsigned and local-only:
+To build from the terminal instead (unsigned, local data only):
 
 ```sh
 xcodebuild -project Today.xcodeproj -scheme Today -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
 open build/Build/Products/Debug/Today.app
 ```
 
----
+To start it automatically at login, choose Launch at Login from the menubar
+icon.
 
-## Notes
+## Using it
 
-- **Hotkey taken?** Some input-source switchers use ⌥Space. Change the modifier
-  in `Today/App/HotKey.swift`.
-- **Data** is at `~/Library/Application Support/Today/Today.store`. Signed
-  builds mirror it to the CloudKit container `iCloud.com.brandongomes.today`;
-  unsigned builds detect the missing entitlement and stay local.
-  See `Today/Models/Store.swift`.
-- **Project file** is generated from `project.yml`. After editing it, run
-  `brew install xcodegen && xcodegen`.
-- **Sound** is synthesised by `scripts/make_sounds.py`. Edit the numbers, run
-  it again, rebuild.
+### Adding a task
+
+Press ⌥Space. The text field at the top of the panel is focused. Type the task
+and press Enter. The task is added to the top of the list, in the space shown
+by the current tab. The field clears and stays focused so you can add another.
+Esc clears the field; a second Esc closes the panel.
+
+### Spaces
+
+The tabs under the field are spaces. The first tab, All, shows every task
+grouped by space. The others show one space each.
+
+- ⌘1 selects All; ⌘2 to ⌘9 select spaces in tab order. Tab and Shift-Tab cycle.
+- ⌘N, or the `+` pill, creates a space. Type a name and press Enter.
+- Right-click a space to rename or delete it. Deleting a space does not delete
+  its tasks; they become unfiled and appear under Inbox on the All tab.
+
+### The list
+
+The list shows every task that is not done, followed by two optional sections:
+Snoozed, and Done (tasks completed today).
+
+- Press ↓ from the field to move into the list, then ↑ and ↓ to move between
+  rows. Pressing ↑ on the first row returns to the field, as does typing any
+  letter.
+- Space completes the selected task. The row keeps its place briefly, then
+  moves to the Done section. Space on a Done task un-completes it.
+- ⌘S snoozes the selected task until midnight. It moves to the Snoozed section.
+  ⌘S on a snoozed task wakes it immediately.
+- ⌥↑ and ⌥↓ move the selected task up or down within its space.
+- ⌘⌫ deletes the selected task. ⌘Z undoes the last change.
+
+When every task in the current tab is done or snoozed, the list is replaced by
+a single line such as "All clear · 4 done today". Done tasks are kept and
+reappear if a task is added or woken.
+
+### Notes on a task
+
+Press Enter on a selected row, or double-click it, to open the task. The screen
+shows the title, which can be edited, and a notes area below it. Changes save
+as you type. Enter in the title moves to the notes; ⌘↩ completes or
+un-completes the task; Esc returns to the list with the same row selected.
+Tasks with notes show a small glyph in the list.
+
+## Keys
+
+| Context | Key | Action |
+| :-- | :-- | :-- |
+| Anywhere | ⌥Space | Open or close the panel |
+| Field | Enter | Add the task |
+| Field | ↓ | Move into the list |
+| Field | Esc | Clear the field, or close the panel if empty |
+| Tabs | ⌘1 | Show All |
+| Tabs | ⌘2 – ⌘9 | Show a space |
+| Tabs | Tab, ⇧Tab | Next or previous tab |
+| Tabs | ⌘N | New space |
+| List | ↑ ↓ | Move between rows |
+| List | Space | Complete or un-complete |
+| List | Enter | Open the task |
+| List | ⌘S | Snooze until tomorrow, or wake |
+| List | ⌥↑ ⌥↓ | Move the task within its space |
+| List | ⌘⌫ | Delete |
+| List | ⌘Z | Undo |
+| List | any letter | Return to the field |
+| Task | Enter (title) | Move to notes |
+| Task | ⌘↩ | Complete or un-complete |
+| Task | Esc | Back to the list |
+
+## Data and sync
+
+Tasks are stored with SwiftData at
+`~/Library/Application Support/Today/Today.store`. When the app is signed with
+a team, the store is mirrored to the private CloudKit container
+`iCloud.com.brandongomes.today`. Unsigned builds detect the missing entitlement
+and keep data local. See `Today/Models/Store.swift`.
+
+## Changing things
+
+- Hotkey: if ⌥Space is already used on your Mac (some input source switchers
+  take it), change the modifier in `Today/App/HotKey.swift`.
+- Project file: `Today.xcodeproj` is generated from `project.yml`. After
+  editing `project.yml`, run `brew install xcodegen && xcodegen`.
+- Sound: the completion sound is produced by `scripts/make_sounds.py`. Edit
+  the values, run the script, and rebuild.
