@@ -86,7 +86,7 @@ Tasks with notes show a small glyph in the list.
 | Field | ↓ | Move into the list |
 | Field | Esc | Clear the field, or close the panel if empty |
 | Tabs | ⌘1 | Show All |
-| Tabs | ⌘2 – ⌘9 | Show a space |
+| Tabs | ⌘2 to ⌘9 | Show a space |
 | Tabs | Tab, ⇧Tab | Next or previous tab |
 | Tabs | ⌘N | New space |
 | List | ↑ ↓ | Move between rows |
