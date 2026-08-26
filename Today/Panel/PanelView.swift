@@ -359,6 +359,7 @@ struct PanelView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 1) {
                     ForEach(rows) { row in
+                        Group {
                         switch row {
                         case .header(_, let title):
                             sectionHeader(title)
@@ -381,11 +382,14 @@ struct PanelView: View {
                                 Button("Delete", role: .destructive) { delete(task) }
                             }
                         }
+                        }
+                        // The list's top/bottom breathing room belongs to the first and
+                        // last rows, so scrolling a row into view brings it along.
+                        .padding(.top, row.id == rows.first?.id ? 4 : 0)
+                        .padding(.bottom, row.id == rows.last?.id ? 8 : 0)
                     }
                 }
                 .padding(.horizontal, 8)
-                .padding(.top, 4)
-                .padding(.bottom, 8)
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listContentHeight = $0 }
             }
             .onChange(of: selectedID) { _, id in
