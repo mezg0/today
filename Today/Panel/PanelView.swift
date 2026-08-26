@@ -1,3 +1,4 @@
+import AppKit
 import SwiftUI
 import SwiftData
 
@@ -149,7 +150,9 @@ struct PanelView: View {
             if old == .notes { try? context.save() }
             // Keys must always land somewhere while the panel is up.
             if focus == nil {
-                DispatchQueue.main.async { if self.focus == nil { self.focus = .field } }
+                DispatchQueue.main.async {
+                    if self.focus == nil { restoreKeyboard(to: .field) }
+                }
             }
         }
     }
@@ -205,7 +208,7 @@ struct PanelView: View {
     // MARK: - Tabs
 
     private var tabs: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+        ScrollView(.horizontal) {
             // Pills are plain: the panel is the one glass layer, and glass can't sit on glass.
             HStack(spacing: 2) {
                 // Pills carry the ⌘-digit shortcuts, so they fire whatever has focus.
@@ -249,6 +252,7 @@ struct PanelView: View {
             .padding(.horizontal, 12)
             .padding(.vertical, 8)
         }
+        .scrollIndicators(.never)
     }
 
     private func beginEditing(_ space: Space?) {
@@ -370,7 +374,7 @@ struct PanelView: View {
                 }
             }
         }
-        .scrollIndicators(.hidden)
+        .scrollIndicators(.never)
         .frame(height: min(listContentHeight, maxListHeight))
         .focusable()
         .focusEffectDisabled()
@@ -395,6 +399,7 @@ struct PanelView: View {
             .font(.system(size: 12))
             .foregroundStyle(.secondary)
             .scrollContentBackground(.hidden)
+            .scrollIndicators(.never)
             .frame(height: CGFloat(lines) * 15 + 6)
             .overlay(alignment: .topLeading) {
                 if notes.wrappedValue.isEmpty {
@@ -423,10 +428,25 @@ struct PanelView: View {
     private func collapseDetails() {
         guard expandedTaskID != nil else { return }
         try? context.save()
-        // Hand focus back while the editor still exists; removing a focused
-        // view first leaves focus on nothing and the keyboard goes dead.
-        focus = .list
-        withAnimation(quick) { expandedTaskID = nil }
+        focus = nil
+        // Wait for the removal to finish before re-homing focus: the transition
+        // keeps the editor alive for the whole animation, and it takes focus
+        // back if we hand it over early.
+        withAnimation(quick) {
+            expandedTaskID = nil
+        } completion: {
+            restoreKeyboard(to: .list)
+        }
+    }
+
+    // AppKit-arcana: tearing down a focused NSTextView leaves the panel with a
+    // dead first responder, and @FocusState alone will not bring it back.
+    private func restoreKeyboard(to target: Focus) {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        focus = target
+        DispatchQueue.main.async {
+            if focus == nil { focus = .field }
+        }
     }
 
     private var taskEditor: some View {
