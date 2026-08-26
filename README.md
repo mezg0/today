@@ -1,73 +1,94 @@
 # Today
 
-A small todo app for macOS that lives in the menubar. Press ⌥Space from any
-app and a floating panel appears: a text field, a row of tabs for your
-"spaces", and the list of what's left today. You drive all of it from the
-keyboard.
+A floating todo panel for macOS. Press ⌥Space in any app and it appears over
+whatever you were doing; press Esc and it is gone. There is no window to find,
+no Dock icon, and nothing to click. The panel is the entire app.
 
 ![The Today panel open over the desktop](docs/screenshot.png)
 
-Requires macOS 26, because the panel uses Liquid Glass.
+Requires macOS 26 (the panel is Liquid Glass).
 
-## Setup
+## What it does
 
-1. Open `Today.xcodeproj` in Xcode.
-2. Select the Today target, go to Signing & Capabilities, and pick your team.
-   You only do this once. With a team, tasks sync through iCloud; without one,
-   the app still works but keeps its data on this Mac only.
-3. Press ⌘R.
+**Capture.** The field at the top is focused the moment the panel opens. Type,
+press Enter, and the task is at the top of the list. The panel stays open so
+you can keep going, or Esc back to what you were doing.
 
-There is no Dock icon. The menubar icon has Open, Launch at Login, and Quit;
-the panel is the whole interface.
+**Spaces.** Tabs under the field split tasks into spaces such as Work and Home.
+⌘1 shows everything, grouped by space; ⌘2 to ⌘9 jump to one. Whatever tab is
+showing is where new tasks go. Create a space with ⌘N or the + pill; right-click
+a space to rename or delete it. Deleting a space keeps its tasks and unfiles
+them.
 
-If you would rather build from the terminal:
+**Today's list.** Everything not done, plus what you finished today. Move with
+j/k or the arrows, complete with Space. A completed task holds its place for a
+beat, then settles into a Done section at the bottom. When the last task in a
+tab is done, the list collapses to one line: "All clear · 4 done today".
 
-```
-xcodebuild -project Today.xcodeproj -scheme Today -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
-open build/Build/Products/Debug/Today.app
-```
+**Snooze.** ⌘S hides a task until tomorrow. It waits in a Snoozed section at
+the bottom, dimmed, where ⌘S wakes it early. At midnight it comes back on its
+own, at the top of its space.
 
-That build is unsigned, so it runs without iCloud sync.
+**Order.** New tasks go to the top. ⌥↑ and ⌥↓ move a task within its space.
+
+**Task screen.** Enter (or double-click) opens a task in place: the title,
+editable, with notes underneath. The panel keeps its height, so nothing jumps.
+Everything saves as you type; Esc returns you to the same row.
+
+**Undo.** ⌘Z reverses a completion, a snooze, a delete, or an edit.
+
+**Sync.** Tasks live in a SwiftData store and mirror to your private iCloud
+container when the app is signed with a team. Unsigned builds stay local.
+
+**Nothing else.** No due dates, tags, priorities, settings, or onboarding. The
+menubar icon has three items: Open, Launch at Login, Quit.
 
 ## Keys
 
 | Key | What it does |
 | --- | --- |
 | ⌥Space | Open or close the panel, from anywhere. |
-| Enter | Add what you typed to the current tab. On the All tab the task has no space. |
+| Enter | Add what you typed to the current tab. |
 | Esc | Clear the field if it has text, otherwise close the panel. |
-| ⌘1 | Show the All tab. |
+| ⌘1 | Show everything. |
 | ⌘2 to ⌘9 | Show a space. |
 | Tab, Shift-Tab | Cycle through tabs. |
 | ⌘N | New space. |
 | ↓ | Move from the field into the list. |
 | j / k or arrows | Move through the list. |
 | ⌥↑ / ⌥↓ | Move the selected task up or down. |
-| Space | Complete the selected task. Press again to un-complete. |
+| Space | Complete the selected task, or un-complete it. |
+| ⌘S | Snooze until tomorrow, or wake a snoozed task. |
 | ⌘⌫ | Delete the selected task. |
-| ⌘S | Snooze it until tomorrow. It moves to a Snoozed section; ⌘S there wakes it. |
 | ⌘Z | Undo. |
-| Enter or double-click | Open the task: title focused, notes below. |
+| Enter or double-click | Open the task. |
 | ⌘↩ (in a task) | Complete or un-complete it. |
-| Esc (in a task) | Back to the list. |
+| Esc (in a task) | Back to the list, same row. |
 | ↑ past the top, or any letter | Back to the field. |
 
-A task with notes shows a small glyph next to its title. Everything on the
-task screen saves as you type; Esc just takes you back.
+## Setup
 
-The "+" pill at the end of the tab row creates a space. Right-click a space to
-rename or delete it; right-click a task to open or delete it. Deleting a space
-leaves its tasks in place, unfiled.
+1. Open `Today.xcodeproj` in Xcode.
+2. Select the Today target, go to Signing & Capabilities, and pick your team.
+   You only do this once; it is what turns on iCloud sync.
+3. Press ⌘R.
+
+Or from the terminal, unsigned and local-only:
+
+```
+xcodebuild -project Today.xcodeproj -scheme Today -derivedDataPath build CODE_SIGNING_ALLOWED=NO build
+open build/Build/Products/Debug/Today.app
+```
 
 ## Notes
 
 If ⌥Space is already taken on your Mac (some input source switchers use it),
 change the modifier in `Today/App/HotKey.swift`.
 
-Data is a SwiftData store at `~/Library/Application Support/Today/Today.store`.
-Signed builds mirror it to the private CloudKit container
-`iCloud.com.brandongomes.today`; unsigned builds detect the missing entitlement
-and stay local. See `Today/Models/Store.swift`.
+Data is at `~/Library/Application Support/Today/Today.store`. Signed builds
+mirror it to the private CloudKit container `iCloud.com.brandongomes.today`;
+unsigned builds detect the missing entitlement and stay local. See
+`Today/Models/Store.swift`.
 
 `xcodegen` generates the Xcode project from `project.yml`. After editing it,
 run `brew install xcodegen && xcodegen`.
