@@ -292,10 +292,11 @@ struct PanelView: View {
     }
 
     private func cancelSpaceEdit() {
+        focus = nil
         isEditingSpace = false
         editingSpace = nil
         spaceName = ""
-        DispatchQueue.main.async { focus = .field }
+        DispatchQueue.main.async { restoreKeyboard(to: .field) }
     }
 
     private func delete(_ space: Space) {
@@ -452,8 +453,11 @@ struct PanelView: View {
 
     private func cancelTaskEdit() {
         editText = ""
-        focus = .list
+        focus = nil
         editingTaskID = nil
+        // The editor is gone after this pass; a plain focus assignment now
+        // would target a view that still exists and then dies with it.
+        DispatchQueue.main.async { restoreKeyboard(to: .list) }
     }
 
     private func sectionHeader(_ title: String) -> some View {
