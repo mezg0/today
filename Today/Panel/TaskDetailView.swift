@@ -97,6 +97,8 @@ struct TaskDetailView: View {
                     Text("Notes")
                         .font(.system(size: 13))
                         .foregroundStyle(.tertiary)
+                        // The text view starts its text (and caret) a hair in from its edge.
+                        .padding(.leading, 2.5)
                         .padding(.top, 1)
                         .allowsHitTesting(false)
                 }
