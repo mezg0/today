@@ -128,8 +128,6 @@ struct PanelView: View {
                 TaskDetailView(
                     task: task,
                     focus: $focus,
-                    backLabel: selectedSpace?.name ?? "All",
-                    showsSpace: selectedSpace == nil,
                     maxNotesHeight: maxListHeight,
                     onBack: closeDetail,
                     onToggle: { toggle(task) }

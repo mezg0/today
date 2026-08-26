@@ -1,60 +1,40 @@
 import SwiftUI
 import SwiftData
 
-// One task, full screen inside the panel. A small bar to go back, then one
-// block aligned to a single left edge: title, notes, and where it came from.
-// More fields land in that block later.
+// One task, full screen inside the panel: the row you came from, with notes
+// under it. Nothing else. Esc goes back.
 struct TaskDetailView: View {
     @Bindable var task: Task
     var focus: FocusState<PanelView.Focus?>.Binding
-    /// Name of the list Esc returns to ("All" or a space).
-    var backLabel: String
-    /// Whether the list being returned to mixes spaces, so the space is worth stating.
-    var showsSpace: Bool
     var maxNotesHeight: CGFloat
     var onBack: () -> Void
     var onToggle: () -> Void
 
     private static let margin: CGFloat = 18
     private static let checkSize: CGFloat = 18
-    /// Left edge shared by the title, notes, and footer line.
+    /// Left edge shared by the title and the notes.
     private static let textInset: CGFloat = margin + checkSize + 10
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            topBar
-            Rectangle()
-                .fill(.primary.opacity(0.07))
-                .frame(height: 1)
             titleRow
-                .padding(.top, 14)
             notesEditor
-                .padding(.top, 2)
-            Text(footer)
-                .font(.system(size: 11))
-                .foregroundStyle(.tertiary)
-                .padding(.leading, Self.textInset)
-                .padding(.top, 8)
-                .padding(.bottom, 14)
         }
-    }
-
-    private var topBar: some View {
-        Button(action: onBack) {
-            HStack(spacing: 5) {
+        .padding(.top, 18)
+        .padding(.bottom, 16)
+        .overlay(alignment: .topTrailing) {
+            Button(action: onBack) {
                 Image(systemName: "chevron.left")
                     .font(.system(size: 11, weight: .semibold))
-                Text(backLabel)
-                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.quaternary)
+                    .frame(width: 24, height: 24)
+                    .contentShape(Rectangle())
             }
-            .foregroundStyle(.secondary)
-            .contentShape(Rectangle())
+            .buttonStyle(.plain)
+            .focusable(false)
+            .help("Back (Esc)")
+            .padding(8)
         }
-        .buttonStyle(.plain)
-        .focusable(false)
-        .help("Back (Esc)")
-        .padding(.horizontal, Self.margin)
-        .frame(height: 38)
     }
 
     private var titleRow: some View {
@@ -79,7 +59,7 @@ struct TaskDetailView: View {
 
             TextField("", text: $task.title)
                 .textFieldStyle(.plain)
-                .font(.system(size: 16, weight: .semibold))
+                .font(.system(size: 15, weight: .medium))
                 .strikethrough(task.isDone, color: .secondary)
                 .foregroundStyle(task.isDone ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .focused(focus, equals: .detailTitle)
@@ -87,12 +67,7 @@ struct TaskDetailView: View {
                 .onExitCommand(perform: onBack)
         }
         .padding(.horizontal, Self.margin)
-    }
-
-    private var footer: String {
-        let added = "Added " + task.createdAt.formatted(.dateTime.weekday(.abbreviated).day().month(.abbreviated))
-        guard showsSpace else { return added }
-        return "\(task.space?.name ?? "Inbox") \u{00B7} \(added)"
+        .padding(.trailing, 24)
     }
 
     private var notesEditor: some View {
@@ -101,12 +76,13 @@ struct TaskDetailView: View {
             set: { task.notes = $0.isEmpty ? nil : $0 }
         )
         let lineHeight: CGFloat = 19
-        let lines = max(3, notes.wrappedValue.components(separatedBy: "\n").count)
+        let lines = max(2, notes.wrappedValue.components(separatedBy: "\n").count)
         let height = min(maxNotesHeight, CGFloat(lines) * lineHeight + 8)
         return TextEditor(text: notes)
             .textEditorStyle(.plain)
             .font(.system(size: 13))
             .lineSpacing(3)
+            .foregroundStyle(.secondary)
             .scrollContentBackground(.hidden)
             .scrollIndicators(.never)
             .frame(height: height)
@@ -114,7 +90,7 @@ struct TaskDetailView: View {
                 if notes.wrappedValue.isEmpty {
                     Text("Notes")
                         .font(.system(size: 13))
-                        .foregroundStyle(.tertiary)
+                        .foregroundStyle(.quaternary)
                         // The text view starts its text (and caret) a hair in from its edge.
                         .padding(.leading, 2.5)
                         .padding(.top, 1)
@@ -126,5 +102,6 @@ struct TaskDetailView: View {
             // Pull the text view's own inset back so the text sits on the title's edge.
             .padding(.leading, Self.textInset - 5)
             .padding(.trailing, Self.margin)
+            .padding(.top, 4)
     }
 }
