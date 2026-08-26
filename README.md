@@ -42,10 +42,9 @@ That build is unsigned, so it runs without iCloud sync.
 | ↓ | Move from the field into the list. |
 | j / k or arrows | Move through the list. |
 | Space | Complete the selected task. Press again to un-complete. |
-| Enter (in the list) | Edit the selected task inline. Enter saves, Esc cancels. |
 | ⌘⌫ | Delete the selected task. |
 | ⌘Z | Undo. |
-| → or double-click | Open the task: edit its title, add notes. |
+| Enter or double-click | Open the task: title focused, notes below. |
 | ⌘↩ (in a task) | Complete or un-complete it. |
 | Esc (in a task) | Back to the list. |
 | ↑ past the top, or any letter | Back to the field. |
@@ -54,7 +53,7 @@ A task with notes shows a small glyph next to its title. Everything on the
 task screen saves as you type; Esc just takes you back.
 
 The "+" pill at the end of the tab row creates a space. Right-click a space to
-rename or delete it; right-click a task to open, rename, or delete it. Deleting a space
+rename or delete it; right-click a task to open or delete it. Deleting a space
 leaves its tasks in place, unfiled.
 
 ## Notes

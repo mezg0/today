@@ -28,9 +28,6 @@ struct PanelView: View {
     @State private var editingSpace: Space?
     @State private var spaceName = ""
 
-    @State private var editingTaskID: UUID?
-    @State private var editText = ""
-
     // Which task's screen is pushed over the list, if any.
     @State private var detailTaskID: UUID?
 
@@ -40,7 +37,7 @@ struct PanelView: View {
     // The list screen's height, held by the task screen so → never resizes the panel.
     @State private var listScreenHeight: CGFloat = 0
 
-    enum Focus { case field, list, spaceEditor, taskEditor, detailTitle, detailNotes }
+    enum Focus { case field, list, spaceEditor, detailTitle, detailNotes }
     @FocusState private var focus: Focus?
     // Set while a deliberate re-home is queued, so the nil-focus net stays out of the way.
     @State private var focusRestorePending = false
@@ -346,26 +343,21 @@ struct PanelView: View {
                         case .header(_, let title):
                             sectionHeader(title)
                         case .task(let task):
-                            if editingTaskID == task.id {
-                                taskEditor
-                            } else {
-                                TaskRow(
-                                    title: task.title,
-                                    isDone: task.isDone,
-                                    isSettled: task.isDone && !settling.contains(task.id),
-                                    isSelected: task.id == selectedID && focus == .list,
-                                    hasNotes: !(task.notes ?? "").isEmpty,
-                                    onOpen: { openDetail(task) }
-                                ) {
-                                    selectedID = task.id
-                                    focus = .list
-                                    toggle(task)
-                                }
-                                .contextMenu {
-                                    Button("Open") { openDetail(task) }
-                                    Button("Rename") { beginEditing(task) }
-                                    Button("Delete", role: .destructive) { delete(task) }
-                                }
+                            TaskRow(
+                                title: task.title,
+                                isDone: task.isDone,
+                                isSettled: task.isDone && !settling.contains(task.id),
+                                isSelected: task.id == selectedID && focus == .list,
+                                hasNotes: !(task.notes ?? "").isEmpty,
+                                onOpen: { openDetail(task) }
+                            ) {
+                                selectedID = task.id
+                                focus = .list
+                                toggle(task)
+                            }
+                            .contextMenu {
+                                Button("Open") { openDetail(task) }
+                                Button("Delete", role: .destructive) { delete(task) }
                             }
                         }
                     }
@@ -403,7 +395,7 @@ struct PanelView: View {
         focus = nil
         detailTaskID = task.id
         // The screen exists only after the next pass; focus sticks then.
-        DispatchQueue.main.async { restoreKeyboard(to: .detailNotes) }
+        DispatchQueue.main.async { restoreKeyboard(to: .detailTitle) }
     }
 
     private func closeDetail() {
@@ -428,48 +420,6 @@ struct PanelView: View {
         DispatchQueue.main.async {
             if focus == nil { focus = detailTaskID == nil ? .field : .detailNotes }
         }
-    }
-
-    private var taskEditor: some View {
-        HStack(spacing: 10) {
-            Circle()
-                .strokeBorder(.secondary.opacity(0.55), lineWidth: 1.5)
-                .frame(width: 18, height: 18)
-            TextField("", text: $editText)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13))
-                .focused($focus, equals: .taskEditor)
-                .onSubmit(commitTaskEdit)
-                .onExitCommand(perform: cancelTaskEdit)
-        }
-        .padding(.horizontal, TaskRow.horizontalPadding)
-        .padding(.vertical, TaskRow.verticalPadding)
-        .background(TaskRow.shape.fill(.selection.opacity(TaskRow.selectionOpacity)))
-    }
-
-    private func beginEditing(_ task: Task) {
-        selectedID = task.id
-        editText = task.title
-        editingTaskID = task.id
-        DispatchQueue.main.async { focus = .taskEditor }
-    }
-
-    private func commitTaskEdit() {
-        defer { cancelTaskEdit() }
-        let title = editText.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !title.isEmpty, let task = tasks.first(where: { $0.id == editingTaskID }) else { return }
-        task.title = title
-        try? context.save()
-    }
-
-    private func cancelTaskEdit() {
-        editText = ""
-        focusRestorePending = true
-        focus = nil
-        editingTaskID = nil
-        // The editor is gone after this pass; a plain focus assignment now
-        // would target a view that still exists and then dies with it.
-        DispatchQueue.main.async { restoreKeyboard(to: .list) }
     }
 
     private func sectionHeader(_ title: String) -> some View {
@@ -520,14 +470,11 @@ struct PanelView: View {
             guard press.modifiers.contains(.command) else { return .handled }
             if let task = selectedTask { delete(task) }
             return .handled
-        case .rightArrow:
-            if let task = selectedTask { openDetail(task) }
-            return .handled
         case .tab:
             cycleSpace(by: press.modifiers.contains(.shift) ? -1 : 1)
             return .handled
         case .return:
-            if let task = selectedTask { beginEditing(task) }
+            if let task = selectedTask { openDetail(task) }
             return .handled
         default:
             break
