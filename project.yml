@@ -22,6 +22,8 @@ targets:
       properties:
         LSUIElement: true
         CFBundleDisplayName: Today
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: com.brandongomes.today
