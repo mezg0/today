@@ -83,7 +83,16 @@ struct PanelView: View {
         }
     }
 
-    private var visible: [Task] { active + done }
+    /// Hidden until tomorrow, but still listed so they can be found and woken.
+    private var snoozed: [Task] {
+        tasks.filter { task in
+            guard inScope(task), !task.isDone, let until = task.snoozedUntil else { return false }
+            return until > .now
+        }
+        .sorted { a, b in a.sortOrder != b.sortOrder ? a.sortOrder < b.sortOrder : a.createdAt > b.createdAt }
+    }
+
+    private var visible: [Task] { active + snoozed + done }
 
     private enum Row: Identifiable {
         case header(id: String, title: String)
@@ -99,7 +108,7 @@ struct PanelView: View {
 
     private var rows: [Row] {
         // Once everything is done, the Done rows give way to a one-line summary.
-        guard !active.isEmpty else { return [] }
+        guard !active.isEmpty || !snoozed.isEmpty else { return [] }
         var rows: [Row] = []
         if selectedSpace == nil {
             var lastGroup: UUID?? = .none
@@ -113,6 +122,10 @@ struct PanelView: View {
             }
         } else {
             rows += active.map(Row.task)
+        }
+        if !snoozed.isEmpty {
+            rows.append(.header(id: "snoozed", title: "Snoozed"))
+            rows += snoozed.map(Row.task)
         }
         if !done.isEmpty {
             rows.append(.header(id: "done", title: "Done"))
@@ -353,7 +366,8 @@ struct PanelView: View {
                             TaskRow(
                                 title: task.title,
                                 isDone: task.isDone,
-                                isSettled: task.isDone && !settling.contains(task.id),
+                                isSettled: (task.isDone && !settling.contains(task.id)) || isSnoozed(task),
+                                isSnoozed: isSnoozed(task),
                                 isSelected: task.id == selectedID && focus == .list,
                                 hasNotes: !(task.notes ?? "").isEmpty,
                                 onOpen: { openDetail(task) }
@@ -596,11 +610,19 @@ struct PanelView: View {
         try? context.save()
     }
 
-    /// Hide until tomorrow. It comes back at the top of its space with the day.
+    private func isSnoozed(_ task: Task) -> Bool {
+        guard let until = task.snoozedUntil else { return false }
+        return until > .now
+    }
+
+    /// ⌘S: hide until tomorrow; ⌘S again wakes it. Either way the row stays selected.
     private func snooze(_ task: Task) {
-        moveHighlightOff(task)
-        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
-        task.snoozedUntil = Calendar.current.startOfDay(for: tomorrow)
+        if isSnoozed(task) {
+            task.snoozedUntil = nil
+        } else {
+            let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+            task.snoozedUntil = Calendar.current.startOfDay(for: tomorrow)
+        }
         try? context.save()
     }
 

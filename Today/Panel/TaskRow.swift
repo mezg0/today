@@ -12,6 +12,7 @@ struct TaskRow: View {
     let title: String
     let isDone: Bool
     let isSettled: Bool
+    let isSnoozed: Bool
     let isSelected: Bool
     let hasNotes: Bool
     var onOpen: () -> Void
@@ -28,6 +29,11 @@ struct TaskRow: View {
                 .lineLimit(2)
             if hasNotes {
                 Image(systemName: "text.alignleft")
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
+            if isSnoozed {
+                Image(systemName: "moon.zzz")
                     .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(.secondary)
             }
