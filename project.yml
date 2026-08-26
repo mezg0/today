@@ -16,6 +16,7 @@ targets:
         com.apple.developer.icloud-services: [CloudKit]
         com.apple.developer.icloud-container-identifiers: [iCloud.com.brandongomes.today]
         com.apple.security.network.client: true
+        com.apple.developer.aps-environment: development
     info:
       path: Today/Info.plist
       properties:
