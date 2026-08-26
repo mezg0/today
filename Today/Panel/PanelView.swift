@@ -582,6 +582,8 @@ struct PanelView: View {
     }
 
     private func toggle(_ task: Task) {
+        // The row is about to change sections; the highlight stays put.
+        moveHighlightOff(task)
         if task.isDone {
             do {
                 task.completedAt = nil
@@ -621,8 +623,9 @@ struct PanelView: View {
         return until > .now
     }
 
-    /// ⌘S: hide until tomorrow; ⌘S again wakes it. Either way the row stays selected.
+    /// ⌘S: hide until tomorrow; ⌘S again wakes it. The highlight stays where it was.
     private func snooze(_ task: Task) {
+        moveHighlightOff(task)
         if isSnoozed(task) {
             task.snoozedUntil = nil
         } else {
