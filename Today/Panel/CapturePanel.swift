@@ -90,6 +90,8 @@ final class CapturePanelController: NSObject, NSWindowDelegate {
     }
 
     func dismiss() {
+        // ⌥Space mid-edit must not lose the last keystrokes.
+        try? Store.container.mainContext.save()
         panel.orderOut(nil)
         // Tear the view down so nothing (focus re-homing, timers) keeps running offscreen.
         panel.contentView = NSView()

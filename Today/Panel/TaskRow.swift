@@ -14,6 +14,7 @@ struct TaskRow: View {
     let isSettled: Bool
     let isSelected: Bool
     let hasNotes: Bool
+    var onOpen: () -> Void
     var onToggle: () -> Void
     @State private var isHovered = false
 
@@ -27,8 +28,8 @@ struct TaskRow: View {
                 .lineLimit(2)
             if hasNotes {
                 Image(systemName: "text.alignleft")
-                    .font(.system(size: 9, weight: .medium))
-                    .foregroundStyle(.tertiary)
+                    .font(.system(size: 10, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
             Spacer(minLength: 0)
         }
@@ -38,6 +39,7 @@ struct TaskRow: View {
         .opacity(isSettled ? 0.55 : 1)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
+        .onTapGesture(count: 2, perform: onOpen)
         .onTapGesture(perform: onToggle)
     }
 

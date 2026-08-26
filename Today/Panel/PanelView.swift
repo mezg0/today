@@ -37,6 +37,8 @@ struct PanelView: View {
     // Measured from the list's content so the panel is sized by what's in it,
     // not by whatever height the window happens to have right now.
     @State private var listContentHeight: CGFloat = 0
+    // The list screen's height, held by the task screen so → never resizes the panel.
+    @State private var listScreenHeight: CGFloat = 0
 
     enum Focus { case field, list, spaceEditor, taskEditor, detailTitle, detailNotes }
     @FocusState private var focus: Focus?
@@ -128,8 +130,10 @@ struct PanelView: View {
                 TaskDetailView(
                     task: task,
                     focus: $focus,
-                    maxNotesHeight: maxListHeight,
-                    onBack: closeDetail
+                    context: task.space?.name ?? "Inbox",
+                    height: max(listScreenHeight, 160),
+                    onBack: closeDetail,
+                    onToggle: { toggle(task) }
                 )
             } else {
                 listScreen
@@ -169,6 +173,7 @@ struct PanelView: View {
                 list(rows: rows)
             }
         }
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { listScreenHeight = $0 }
     }
 
     private var hairline: some View {
@@ -349,7 +354,8 @@ struct PanelView: View {
                                     isDone: task.isDone,
                                     isSettled: task.isDone && !settling.contains(task.id),
                                     isSelected: task.id == selectedID && focus == .list,
-                                    hasNotes: !(task.notes ?? "").isEmpty
+                                    hasNotes: !(task.notes ?? "").isEmpty,
+                                    onOpen: { openDetail(task) }
                                 ) {
                                     selectedID = task.id
                                     focus = .list
@@ -396,8 +402,9 @@ struct PanelView: View {
         focusRestorePending = true
         focus = nil
         detailTaskID = task.id
-            // The screen exists only after the next pass; focus sticks then.
-            DispatchQueue.main.async { restoreKeyboard(to: .detailNotes) }
+        let target: Focus = (task.notes ?? "").isEmpty ? .detailTitle : .detailNotes
+        // The screen exists only after the next pass; focus sticks then.
+        DispatchQueue.main.async { restoreKeyboard(to: target) }
     }
 
     private func closeDetail() {
@@ -409,8 +416,8 @@ struct PanelView: View {
         focusRestorePending = true
         focus = nil
         detailTaskID = nil
-            // The screen exists only after the next pass; focus sticks then.
-            DispatchQueue.main.async { restoreKeyboard(to: .list) }
+        // The list exists only after the next pass; focus sticks then.
+        DispatchQueue.main.async { restoreKeyboard(to: .list) }
     }
 
     // AppKit-arcana: tearing down a focused NSTextView leaves the panel with a
