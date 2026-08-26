@@ -11,6 +11,8 @@ final class Task {
     var completedAt: Date?
     var snoozedUntil: Date?
     var notes: String?
+    // Manual order within a space; lower is higher. New tasks go to the top.
+    var sortOrder: Double = 0
     var space: Space?
 
     init(title: String, space: Space? = nil) {

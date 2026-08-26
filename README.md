@@ -41,6 +41,7 @@ That build is unsigned, so it runs without iCloud sync.
 | Tab, Shift-Tab | Cycle through tabs. |
 | ↓ | Move from the field into the list. |
 | j / k or arrows | Move through the list. |
+| ⌥↑ / ⌥↓ | Move the selected task up or down. |
 | Space | Complete the selected task. Press again to un-complete. |
 | ⌘⌫ | Delete the selected task. |
 | ⌘S | Snooze it until tomorrow. |

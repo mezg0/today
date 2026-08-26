@@ -60,14 +60,18 @@ struct PanelView: View {
             if let snooze = task.snoozedUntil, snooze > .now { return false }
             return true
         }
-        guard selectedSpace == nil else { return scoped }
-        // All view: inbox first, then spaces in their order; newest first within.
+        // Within a space: manual order, then newest first for ties.
+        func before(_ a: Task, _ b: Task) -> Bool {
+            a.sortOrder != b.sortOrder ? a.sortOrder < b.sortOrder : a.createdAt > b.createdAt
+        }
+        guard selectedSpace == nil else { return scoped.sorted(by: before) }
+        // All view: inbox first, then spaces in their order.
         // Duplicate ids are possible after a CloudKit merge; never trap on them.
         let order = Dictionary(spaces.enumerated().map { ($1.id, $0 + 1) }, uniquingKeysWith: { a, _ in a })
         return scoped.sorted { a, b in
             let oa = a.space.flatMap { order[$0.id] } ?? 0
             let ob = b.space.flatMap { order[$0.id] } ?? 0
-            return oa != ob ? oa < ob : a.createdAt > b.createdAt
+            return oa != ob ? oa < ob : before(a, b)
         }
     }
 
@@ -457,10 +461,16 @@ struct PanelView: View {
         guard focus == .list else { return .ignored }
         switch press.key {
         case .downArrow:
-            moveSelection(by: 1)
+            if press.modifiers.contains(.option) {
+                if let task = selectedTask, !task.isDone { move(task, by: 1) }
+            } else {
+                moveSelection(by: 1)
+            }
             return .handled
         case .upArrow:
-            if visible.firstIndex(where: { $0.id == selectedID }) == 0 {
+            if press.modifiers.contains(.option) {
+                if let task = selectedTask, !task.isDone { move(task, by: -1) }
+            } else if visible.firstIndex(where: { $0.id == selectedID }) == 0 {
                 focus = .field
             } else {
                 moveSelection(by: -1)
@@ -535,10 +545,20 @@ struct PanelView: View {
     private func addTask() {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty else { return }
-        do {
-            context.insert(Task(title: trimmed, space: selectedSpace))
-            text = ""
-        }
+        let task = Task(title: trimmed, space: selectedSpace)
+        let siblings = tasks.filter { $0.space?.id == selectedSpace?.id && !$0.isDone }
+        task.sortOrder = (siblings.map(\.sortOrder).min() ?? 0) - 1
+        context.insert(task)
+        text = ""
+        try? context.save()
+    }
+
+    /// ⌥↑ / ⌥↓: swap with the neighbour in the same space, then renumber the group.
+    private func move(_ task: Task, by delta: Int) {
+        var group = active.filter { $0.space?.id == task.space?.id }
+        guard let i = group.firstIndex(where: { $0.id == task.id }), group.indices.contains(i + delta) else { return }
+        group.swapAt(i, i + delta)
+        for (n, t) in group.enumerated() { t.sortOrder = Double(n) }
         try? context.save()
     }
 
