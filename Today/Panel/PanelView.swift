@@ -402,9 +402,8 @@ struct PanelView: View {
         focusRestorePending = true
         focus = nil
         detailTaskID = task.id
-        let target: Focus = (task.notes ?? "").isEmpty ? .detailTitle : .detailNotes
         // The screen exists only after the next pass; focus sticks then.
-        DispatchQueue.main.async { restoreKeyboard(to: target) }
+        DispatchQueue.main.async { restoreKeyboard(to: .detailNotes) }
     }
 
     private func closeDetail() {
