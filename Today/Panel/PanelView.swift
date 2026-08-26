@@ -129,8 +129,7 @@ struct PanelView: View {
                     task: task,
                     focus: $focus,
                     maxNotesHeight: maxListHeight,
-                    onBack: closeDetail,
-                    onToggle: { toggle(task) }
+                    onBack: closeDetail
                 )
             } else {
                 listScreen
