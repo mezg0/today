@@ -31,11 +31,14 @@ struct PanelView: View {
     @State private var editingTaskID: UUID?
     @State private var editText = ""
 
+    // Details open under exactly one row at a time.
+    @State private var expandedTaskID: UUID?
+
     // Measured from the list's content so the panel is sized by what's in it,
     // not by whatever height the window happens to have right now.
     @State private var listContentHeight: CGFloat = 0
 
-    private enum Focus { case field, list, spaceEditor, taskEditor }
+    private enum Focus { case field, list, spaceEditor, taskEditor, notes }
     @FocusState private var focus: Focus?
 
     // MARK: - Motion
@@ -142,7 +145,8 @@ struct PanelView: View {
             // Focus lands reliably only after the panel becomes key.
             DispatchQueue.main.async { focus = .field }
         }
-        .onChange(of: focus) { _, focus in
+        .onChange(of: focus) { old, focus in
+            if old == .notes { try? context.save() }
             // Keys must always land somewhere while the panel is up.
             if focus == nil {
                 DispatchQueue.main.async { if self.focus == nil { self.focus = .field } }
@@ -294,6 +298,7 @@ struct PanelView: View {
             }
         }
         selectedID = nil
+        expandedTaskID = nil
         if focus == .list { focus = .field }
     }
 
@@ -320,18 +325,27 @@ struct PanelView: View {
                             if editingTaskID == task.id {
                                 taskEditor
                             } else {
-                                TaskRow(
-                                    title: task.title,
-                                    isDone: task.isDone,
-                                    isSettled: task.isDone && !settling.contains(task.id),
-                                    isSelected: task.id == selectedID && focus == .list
-                                ) {
-                                    selectedID = task.id
-                                    focus = .list
-                                    toggle(task)
+                                VStack(alignment: .leading, spacing: 0) {
+                                    TaskRow(
+                                        title: task.title,
+                                        isDone: task.isDone,
+                                        isSettled: task.isDone && !settling.contains(task.id),
+                                        isSelected: task.id == selectedID && focus == .list,
+                                        hasNotes: expandedTaskID != task.id && !(task.notes ?? "").isEmpty
+                                    ) {
+                                        selectedID = task.id
+                                        focus = .list
+                                        toggle(task)
+                                    }
+                                    if expandedTaskID == task.id {
+                                        details(for: task)
+                                    }
                                 }
                                 .contextMenu {
                                     Button("Edit") { beginEditing(task) }
+                                    Button(expandedTaskID == task.id ? "Hide Details" : "Details") {
+                                        expandedTaskID == task.id ? collapseDetails() : expandDetails(for: task)
+                                    }
                                     Button("Delete", role: .destructive) { delete(task) }
                                 }
                                 .transition(.opacity)
@@ -363,6 +377,42 @@ struct PanelView: View {
         .focused($focus, equals: .list)
         .onKeyPress(action: handleListKey)
         .onExitCommand(perform: onDismiss)
+    }
+
+    // MARK: - Details
+
+    // One section today (notes); further fields drop in as rows in this stack.
+    private func details(for task: Task) -> some View {
+        let notes = Binding(
+            get: { task.notes ?? "" },
+            set: { task.notes = $0.isEmpty ? nil : $0 }
+        )
+        return VStack(alignment: .leading, spacing: 6) {
+            TextField("Notes", text: notes, axis: .vertical)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .foregroundStyle(.secondary)
+                .lineLimit(1...6)
+                .focused($focus, equals: .notes)
+                .onExitCommand(perform: collapseDetails)
+        }
+        .padding(.leading, TaskRow.titleInset)
+        .padding(.trailing, TaskRow.horizontalPadding)
+        .padding(.bottom, 8)
+        .transition(.opacity)
+    }
+
+    private func expandDetails(for task: Task) {
+        selectedID = task.id
+        withAnimation(quick) { expandedTaskID = task.id }
+        // The field only takes focus once it exists.
+        DispatchQueue.main.async { focus = .notes }
+    }
+
+    private func collapseDetails() {
+        withAnimation(quick) { expandedTaskID = nil }
+        try? context.save()
+        DispatchQueue.main.async { focus = .list }
     }
 
     private var taskEditor: some View {
@@ -450,6 +500,12 @@ struct PanelView: View {
         case .delete, .deleteForward:
             if let task = selectedTask { delete(task) }
             return .handled
+        case .rightArrow:
+            if let task = selectedTask { expandDetails(for: task) }
+            return .handled
+        case .leftArrow:
+            if expandedTaskID != nil { collapseDetails() }
+            return .handled
         case .tab:
             cycleSpace(by: press.modifiers.contains(.shift) ? -1 : 1)
             return .handled
@@ -499,6 +555,7 @@ struct PanelView: View {
         }
         let next = min(max(current + delta, 0), visible.count - 1)
         selectedID = visible[next].id
+        if expandedTaskID != nil { withAnimation(quick) { expandedTaskID = nil } }
     }
 
     // MARK: - Task actions
@@ -526,6 +583,7 @@ struct PanelView: View {
 
     private func complete(_ task: Task) {
         let id = task.id
+        if expandedTaskID == id { expandedTaskID = nil }
         withAnimation(motion(.spring(response: 0.28, dampingFraction: 0.62))) {
             task.completedAt = .now
             _ = settling.insert(id)
@@ -541,6 +599,7 @@ struct PanelView: View {
     }
 
     private func delete(_ task: Task) {
+        if expandedTaskID == task.id { expandedTaskID = nil }
         // Only the highlight on the deleted row needs a new home.
         if selectedID == task.id, let index = visible.firstIndex(where: { $0.id == task.id }) {
             let remaining = visible.filter { $0.id != task.id }

@@ -6,11 +6,14 @@ struct TaskRow: View {
     static let horizontalPadding: CGFloat = 10
     static let verticalPadding: CGFloat = 7
     static let selectionOpacity = 0.85
+    /// Distance from the row's leading edge to the title text.
+    static let titleInset: CGFloat = horizontalPadding + 18 + 10
 
     let title: String
     let isDone: Bool
     let isSettled: Bool
     let isSelected: Bool
+    let hasNotes: Bool
     var onToggle: () -> Void
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -24,6 +27,11 @@ struct TaskRow: View {
                 .strikethrough(isDone, color: .secondary)
                 .foregroundStyle(isDone ? AnyShapeStyle(.secondary) : AnyShapeStyle(.primary))
                 .lineLimit(2)
+            if hasNotes {
+                Image(systemName: "text.alignleft")
+                    .font(.system(size: 9, weight: .medium))
+                    .foregroundStyle(.tertiary)
+            }
             Spacer(minLength: 0)
         }
         .padding(.horizontal, Self.horizontalPadding)

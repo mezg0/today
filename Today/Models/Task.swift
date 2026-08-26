@@ -10,6 +10,7 @@ final class Task {
     var createdAt: Date = Date.now
     var completedAt: Date?
     var snoozedUntil: Date?
+    var notes: String?
     var space: Space?
 
     init(title: String, space: Space? = nil) {
