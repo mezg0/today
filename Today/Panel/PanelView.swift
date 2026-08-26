@@ -387,19 +387,30 @@ struct PanelView: View {
             get: { task.notes ?? "" },
             set: { task.notes = $0.isEmpty ? nil : $0 }
         )
-        return VStack(alignment: .leading, spacing: 6) {
-            TextField("Notes", text: notes, axis: .vertical)
-                .textFieldStyle(.plain)
-                .font(.system(size: 12))
-                .foregroundStyle(.secondary)
-                .lineLimit(1...6)
-                .focused($focus, equals: .notes)
-                .onExitCommand(perform: collapseDetails)
-        }
-        .padding(.leading, TaskRow.titleInset)
-        .padding(.trailing, TaskRow.horizontalPadding)
-        .padding(.bottom, 8)
-        .transition(.opacity)
+        // TextEditor, not TextField: on macOS a TextField swallows Return
+        // instead of inserting a newline.
+        let lines = max(1, min(6, notes.wrappedValue.components(separatedBy: "\n").count))
+        return TextEditor(text: notes)
+            .textEditorStyle(.plain)
+            .font(.system(size: 12))
+            .foregroundStyle(.secondary)
+            .scrollContentBackground(.hidden)
+            .frame(height: CGFloat(lines) * 15 + 6)
+            .overlay(alignment: .topLeading) {
+                if notes.wrappedValue.isEmpty {
+                    Text("Notes")
+                        .font(.system(size: 12))
+                        .foregroundStyle(.tertiary)
+                        .allowsHitTesting(false)
+                }
+            }
+            .focused($focus, equals: .notes)
+            .onExitCommand(perform: collapseDetails)
+            // TextEditor insets its text; pull it back so it lines up with the title.
+            .padding(.leading, TaskRow.titleInset - 5)
+            .padding(.trailing, TaskRow.horizontalPadding)
+            .padding(.bottom, 8)
+            .transition(.opacity)
     }
 
     private func expandDetails(for task: Task) {
@@ -410,9 +421,12 @@ struct PanelView: View {
     }
 
     private func collapseDetails() {
-        withAnimation(quick) { expandedTaskID = nil }
+        guard expandedTaskID != nil else { return }
         try? context.save()
-        DispatchQueue.main.async { focus = .list }
+        // Hand focus back while the editor still exists; removing a focused
+        // view first leaves focus on nothing and the keyboard goes dead.
+        focus = .list
+        withAnimation(quick) { expandedTaskID = nil }
     }
 
     private var taskEditor: some View {
@@ -448,10 +462,9 @@ struct PanelView: View {
     }
 
     private func cancelTaskEdit() {
-        editingTaskID = nil
         editText = ""
-        // The editor is being torn down this pass; focus only sticks after it's gone.
-        DispatchQueue.main.async { focus = .list }
+        focus = .list
+        editingTaskID = nil
     }
 
     private func sectionHeader(_ title: String) -> some View {
