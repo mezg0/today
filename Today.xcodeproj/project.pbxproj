@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		003B01771852E45B139362DC /* Sounds.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8B8113B8FDE69467C4FD8793 /* Sounds.swift */; };
 		08469DDE1BE3E3DB6F17E363 /* TaskRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = B71C3DF70DA7A463F140E56D /* TaskRow.swift */; };
+		18E17A579043A6B6EC3C4CF4 /* TaskDetailView.swift in Sources */ = {isa = PBXBuildFile; fileRef = B696C84D567C15A690F4D267 /* TaskDetailView.swift */; };
 		21E7B161D87F29F1D1FAC04B /* TodayApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8D2A09F1B3F91E5F72868B9A /* TodayApp.swift */; };
 		2BBFB13348EC14801C531B5C /* complete.wav in Resources */ = {isa = PBXBuildFile; fileRef = D40B0784425C75995CBCCEE5 /* complete.wav */; };
 		4FACC4DDBE2020EC727FEB29 /* AppDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = C52FAC5EDCB5D0CEBB8C4B77 /* AppDelegate.swift */; };
@@ -30,6 +31,7 @@
 		8D2A09F1B3F91E5F72868B9A /* TodayApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayApp.swift; sourceTree = "<group>"; };
 		A70A36D90140E63F5E67FBFD /* Task.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Task.swift; sourceTree = "<group>"; };
 		AE5480960D5A886A90FE680E /* Space.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Space.swift; sourceTree = "<group>"; };
+		B696C84D567C15A690F4D267 /* TaskDetailView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskDetailView.swift; sourceTree = "<group>"; };
 		B71C3DF70DA7A463F140E56D /* TaskRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TaskRow.swift; sourceTree = "<group>"; };
 		C52FAC5EDCB5D0CEBB8C4B77 /* AppDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppDelegate.swift; sourceTree = "<group>"; };
 		C9E1263ABBB6D6A9DC61DE3D /* Today.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Today.entitlements; sourceTree = "<group>"; };
@@ -99,6 +101,7 @@
 			children = (
 				844D962CA007D6E1E3087A0C /* CapturePanel.swift */,
 				E1346696C4200EB663E6E242 /* PanelView.swift */,
+				B696C84D567C15A690F4D267 /* TaskDetailView.swift */,
 				B71C3DF70DA7A463F140E56D /* TaskRow.swift */,
 			);
 			path = Panel;
@@ -192,6 +195,7 @@
 				713218CEC31BBCDB280E3A9F /* Space.swift in Sources */,
 				519A3CE33E9AEBE0A472FF83 /* Store.swift in Sources */,
 				637350C5BCF212EDCB8D6882 /* Task.swift in Sources */,
+				18E17A579043A6B6EC3C4CF4 /* TaskDetailView.swift in Sources */,
 				08469DDE1BE3E3DB6F17E363 /* TaskRow.swift in Sources */,
 				21E7B161D87F29F1D1FAC04B /* TodayApp.swift in Sources */,
 			);
