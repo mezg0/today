@@ -81,7 +81,7 @@ Snoozed, and Done (tasks completed today).
 - Press `↓` from the field to move into the list, then `↑` and `↓` to move between
   rows. Pressing `↑` on the first row returns to the field, as does typing any
   letter.
-- `Space` completes the selected task. The row keeps its place briefly, then
+- `Space`, or a click on the circle, completes the selected task. The row keeps its place briefly, then
   moves to the Done section. `Space` on a Done task un-completes it.
 - `⌘S` snoozes the selected task until midnight. It moves to the Snoozed section.
   `⌘S` on a snoozed task wakes it immediately.
@@ -94,7 +94,7 @@ reappear if a task is added or woken.
 
 ### Notes on a task
 
-Press `Enter` on a selected row, or double-click it, to open the task. The screen
+Press `Enter` on a selected row, or click it, to open the task. The screen
 shows the title, which can be edited, and a notes area below it. Changes save
 as you type. `Enter` in the title moves to the notes; `⌘↩` completes or
 un-completes the task; `Esc` returns to the list with the same row selected.

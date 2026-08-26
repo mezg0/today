@@ -45,8 +45,8 @@ struct TaskRow: View {
         .opacity(isSettled ? 0.55 : 1)
         .contentShape(Rectangle())
         .onHover { isHovered = $0 }
-        .onTapGesture(count: 2, perform: onOpen)
-        .onTapGesture(perform: onToggle)
+        // The circle completes; anywhere else on the row opens the task.
+        .onTapGesture(perform: onOpen)
     }
 
     private var rowFill: AnyShapeStyle {
@@ -67,5 +67,10 @@ struct TaskRow: View {
                 .opacity(isDone ? 1 : 0)
         }
         .frame(width: 18, height: 18)
+        // A little larger than the ring itself, so it is not a precision target.
+        .padding(4)
+        .contentShape(Circle())
+        .onTapGesture(perform: onToggle)
+        .padding(-4)
     }
 }
