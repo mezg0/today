@@ -43,7 +43,7 @@ That build is unsigned, so it runs without iCloud sync.
 | j / k or arrows | Move through the list. |
 | Space | Complete the selected task. Press again to un-complete. |
 | Enter (in the list) | Edit the selected task inline. Enter saves, Esc cancels. |
-| ⌫ | Delete the selected task. |
+| ⌘⌫ | Delete the selected task. |
 | ⌘Z | Undo. |
 | → or double-click | Open the task: edit its title, add notes. |
 | ⌘↩ (in a task) | Complete or un-complete it. |

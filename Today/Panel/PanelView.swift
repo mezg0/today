@@ -516,6 +516,8 @@ struct PanelView: View {
             if let task = selectedTask { toggle(task) }
             return .handled
         case .delete, .deleteForward:
+            // ⌘⌫ deletes; a bare Backspace is too easy to hit by reflex.
+            guard press.modifiers.contains(.command) else { return .handled }
             if let task = selectedTask { delete(task) }
             return .handled
         case .rightArrow:
@@ -543,6 +545,7 @@ struct PanelView: View {
             moveSelection(by: -1)
         case "\u{7F}", "\u{8}":
             // Backspace arrives as a raw DEL/BS character on some paths.
+            guard press.modifiers.contains(.command) else { return .handled }
             if let task = selectedTask { delete(task) }
         default:
             // Any other *printable* character jumps back to the field with it.
