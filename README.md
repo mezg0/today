@@ -39,6 +39,7 @@ That build is unsigned, so it runs without iCloud sync.
 | ⌘1 | Show the All tab. |
 | ⌘2 to ⌘9 | Show a space. |
 | Tab, Shift-Tab | Cycle through tabs. |
+| ⌘N | New space. |
 | ↓ | Move from the field into the list. |
 | j / k or arrows | Move through the list. |
 | ⌥↑ / ⌥↓ | Move the selected task up or down. |

@@ -268,7 +268,8 @@ struct PanelView: View {
                         .onExitCommand(perform: cancelSpaceEdit)
                 } else {
                     SpacePill(label: "+", isSelected: false) { beginEditing(nil) }
-                        .help("New space")
+                        .keyboardShortcut("n", modifiers: .command)
+                        .help("New space (\u{2318}N)")
                 }
             }
             .padding(.horizontal, 12)
