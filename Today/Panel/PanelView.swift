@@ -594,7 +594,9 @@ struct PanelView: View {
 
     private func complete(_ task: Task) {
         let id = task.id
-        do {
+        // The one animation in the app: the row holds still while it settles,
+        // so only the checkmark itself springs in. Un-checking is instant.
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.62)) {
             task.completedAt = .now
             _ = settling.insert(id)
         }
