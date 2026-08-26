@@ -479,6 +479,10 @@ struct PanelView: View {
         default:
             break
         }
+        if press.modifiers.contains(.command), press.characters == "s" {
+            if let task = selectedTask, !task.isDone { snooze(task) }
+            return .handled
+        }
         if press.modifiers.contains(.command), press.characters == "z" {
             // ⌫ is one keystroke from data loss; ⌘Z brings it back.
             context.undoManager?.undo()
@@ -562,15 +566,24 @@ struct PanelView: View {
     }
 
     private func delete(_ task: Task) {
-        // Only the highlight on the deleted row needs a new home.
-        if selectedID == task.id, let index = visible.firstIndex(where: { $0.id == task.id }) {
-            let remaining = visible.filter { $0.id != task.id }
-            selectedID = remaining.indices.contains(index) ? remaining[index].id : remaining.last?.id
-        }
-        do {
-            context.delete(task)
-        }
+        moveHighlightOff(task)
+        context.delete(task)
         try? context.save()
+    }
+
+    /// Hide until tomorrow. It comes back at the top of its space with the day.
+    private func snooze(_ task: Task) {
+        moveHighlightOff(task)
+        let tomorrow = Calendar.current.date(byAdding: .day, value: 1, to: .now) ?? .now
+        task.snoozedUntil = Calendar.current.startOfDay(for: tomorrow)
+        try? context.save()
+    }
+
+    /// When a row is about to leave the list, give the highlight a new home.
+    private func moveHighlightOff(_ task: Task) {
+        guard selectedID == task.id, let index = visible.firstIndex(where: { $0.id == task.id }) else { return }
+        let remaining = visible.filter { $0.id != task.id }
+        selectedID = remaining.indices.contains(index) ? remaining[index].id : remaining.last?.id
     }
 }
 

@@ -43,6 +43,7 @@ That build is unsigned, so it runs without iCloud sync.
 | j / k or arrows | Move through the list. |
 | Space | Complete the selected task. Press again to un-complete. |
 | ⌘⌫ | Delete the selected task. |
+| ⌘S | Snooze it until tomorrow. |
 | ⌘Z | Undo. |
 | Enter or double-click | Open the task: title focused, notes below. |
 | ⌘↩ (in a task) | Complete or un-complete it. |
