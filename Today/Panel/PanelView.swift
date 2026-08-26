@@ -40,6 +40,8 @@ struct PanelView: View {
 
     enum Focus { case field, list, spaceEditor, taskEditor, detailTitle, detailNotes }
     @FocusState private var focus: Focus?
+    // Set while a deliberate re-home is queued, so the nil-focus net stays out of the way.
+    @State private var focusRestorePending = false
 
     // MARK: - Derived data
 
@@ -145,9 +147,9 @@ struct PanelView: View {
         .onChange(of: focus) { old, focus in
             if old == .detailNotes || old == .detailTitle { try? context.save() }
             // Keys must always land somewhere while the panel is up.
-            if focus == nil {
+            if focus == nil, !focusRestorePending {
                 DispatchQueue.main.async {
-                    if self.focus == nil {
+                    if self.focus == nil, !focusRestorePending {
                         restoreKeyboard(to: detailTaskID == nil ? .field : .detailNotes)
                     }
                 }
@@ -292,6 +294,7 @@ struct PanelView: View {
     }
 
     private func cancelSpaceEdit() {
+        focusRestorePending = true
         focus = nil
         isEditingSpace = false
         editingSpace = nil
@@ -391,6 +394,7 @@ struct PanelView: View {
 
     private func openDetail(_ task: Task) {
         selectedID = task.id
+        focusRestorePending = true
         focus = nil
         detailTaskID = task.id
             // The screen exists only after the next pass; focus sticks then.
@@ -403,6 +407,7 @@ struct PanelView: View {
             task.title = "Untitled"
         }
         try? context.save()
+        focusRestorePending = true
         focus = nil
         detailTaskID = nil
             // The screen exists only after the next pass; focus sticks then.
@@ -412,6 +417,7 @@ struct PanelView: View {
     // AppKit-arcana: tearing down a focused NSTextView leaves the panel with a
     // dead first responder, and @FocusState alone will not bring it back.
     private func restoreKeyboard(to target: Focus) {
+        focusRestorePending = false
         NSApp.keyWindow?.makeFirstResponder(nil)
         focus = target
         DispatchQueue.main.async {
@@ -453,6 +459,7 @@ struct PanelView: View {
 
     private func cancelTaskEdit() {
         editText = ""
+        focusRestorePending = true
         focus = nil
         editingTaskID = nil
         // The editor is gone after this pass; a plain focus assignment now
