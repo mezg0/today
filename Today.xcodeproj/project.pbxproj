@@ -18,6 +18,7 @@
 		637350C5BCF212EDCB8D6882 /* Task.swift in Sources */ = {isa = PBXBuildFile; fileRef = A70A36D90140E63F5E67FBFD /* Task.swift */; };
 		677F3A0B1BA68BF9002F03C4 /* CapturePanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 844D962CA007D6E1E3087A0C /* CapturePanel.swift */; };
 		713218CEC31BBCDB280E3A9F /* Space.swift in Sources */ = {isa = PBXBuildFile; fileRef = AE5480960D5A886A90FE680E /* Space.swift */; };
+		9FEEBF5807FBB5811A001B69 /* LaunchAtLogin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7284C13C1C829081E20736E1 /* LaunchAtLogin.swift */; };
 		DC9C2CA054C00230A5A3EE84 /* PanelView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E1346696C4200EB663E6E242 /* PanelView.swift */; };
 /* End PBXBuildFile section */
 
@@ -25,6 +26,7 @@
 		217548D6AE24375F0D34FF37 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist; path = Info.plist; sourceTree = "<group>"; };
 		4B6E34F59D3C51FE89E6D23D /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		6C19D9508CAC013139B14CC0 /* HotKey.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HotKey.swift; sourceTree = "<group>"; };
+		7284C13C1C829081E20736E1 /* LaunchAtLogin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchAtLogin.swift; sourceTree = "<group>"; };
 		7D1638C479E61E05A92FC79A /* Today.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Today.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		844D962CA007D6E1E3087A0C /* CapturePanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CapturePanel.swift; sourceTree = "<group>"; };
 		8B8113B8FDE69467C4FD8793 /* Sounds.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Sounds.swift; sourceTree = "<group>"; };
@@ -43,6 +45,7 @@
 		0985B227560336B857EEC6D0 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				7284C13C1C829081E20736E1 /* LaunchAtLogin.swift */,
 				8B8113B8FDE69467C4FD8793 /* Sounds.swift */,
 			);
 			path = Support;
@@ -190,6 +193,7 @@
 				4FACC4DDBE2020EC727FEB29 /* AppDelegate.swift in Sources */,
 				677F3A0B1BA68BF9002F03C4 /* CapturePanel.swift in Sources */,
 				54F9C693D99E6FB9B624389A /* HotKey.swift in Sources */,
+				9FEEBF5807FBB5811A001B69 /* LaunchAtLogin.swift in Sources */,
 				DC9C2CA054C00230A5A3EE84 /* PanelView.swift in Sources */,
 				003B01771852E45B139362DC /* Sounds.swift in Sources */,
 				713218CEC31BBCDB280E3A9F /* Space.swift in Sources */,

@@ -17,8 +17,8 @@ Requires macOS 26, because the panel uses Liquid Glass.
    the app still works but keeps its data on this Mac only.
 3. Press ⌘R.
 
-There is no Dock icon. The menubar icon has two items, Open and Quit; the panel
-is the whole interface.
+There is no Dock icon. The menubar icon has Open, Launch at Login, and Quit;
+the panel is the whole interface.
 
 If you would rather build from the terminal:
 

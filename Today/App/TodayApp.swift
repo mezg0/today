@@ -10,6 +10,11 @@ struct TodayApp: App {
         MenuBarExtra("Today", systemImage: "checkmark.circle.fill") {
             Button("Open Today   \u{2325}Space") { appDelegate.showPanel() }
             Divider()
+            Toggle("Launch at Login", isOn: Binding(
+                get: { LaunchAtLogin.isEnabled },
+                set: { LaunchAtLogin.set($0) }
+            ))
+            Divider()
             Button("Quit Today") { NSApp.terminate(nil) }
         }
     }
