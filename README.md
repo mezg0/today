@@ -28,8 +28,8 @@ Tabs under the field split tasks into spaces such as *Work* and *Home*.
   Deleting a space keeps its tasks and unfiles them.
 
 ### Today's list
-Everything not done, plus what you finished today. Move with `j` / `k` or the
-arrows, complete with Space.
+Everything not done, plus what you finished today. Move with the arrows, complete
+with Space.
 
 A completed task holds its place for a beat, then settles into a **Done**
 section at the bottom. When the last task in a tab is done, the list collapses
@@ -92,7 +92,7 @@ three items: Open, Launch at Login, Quit.
 
 | Key | |
 | :-- | :-- |
-| j / k, ↑ / ↓ | Move through the list |
+| ↑ / ↓ | Move through the list |
 | Space | Complete, or un-complete |
 | Enter | Open the task |
 | ⌘S | Snooze until tomorrow, or wake |

@@ -523,10 +523,6 @@ struct PanelView: View {
             return .handled
         }
         switch press.characters {
-        case "j":
-            moveSelection(by: 1)
-        case "k":
-            moveSelection(by: -1)
         case "\u{7F}", "\u{8}":
             // Backspace arrives as a raw DEL/BS character on some paths.
             guard press.modifiers.contains(.command) else { return .handled }
