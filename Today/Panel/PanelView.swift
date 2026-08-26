@@ -94,6 +94,8 @@ struct PanelView: View {
     }
 
     private var rows: [Row] {
+        // Once everything is done, the Done rows give way to a one-line summary.
+        guard !active.isEmpty else { return [] }
         var rows: [Row] = []
         if selectedSpace == nil {
             var lastGroup: UUID?? = .none
@@ -432,7 +434,9 @@ struct PanelView: View {
     }
 
     private var emptyState: some View {
-        Text(selectedSpace.map { "Nothing in \($0.name)" } ?? "All clear")
+        let base = selectedSpace.map { "Nothing in \($0.name)" } ?? "All clear"
+        let doneCount = done.count
+        return Text(doneCount > 0 ? "\(base) \u{00B7} \(doneCount) done today" : base)
             .font(.system(size: 13))
             .foregroundStyle(.secondary)
             .frame(maxWidth: .infinity)
